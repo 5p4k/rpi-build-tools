@@ -8,20 +8,26 @@ RUN apt-get -qq update \
 
 
 FROM raspbian-build-essential AS raspbian-cmake-bootstrapped
+ARG CMAKE_VERSION
+ENV CMAKE_URL="https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}.tar.gz"
 WORKDIR /root
-RUN curl -L -o cmake-${CMAKE_VERSION}.tar.gz https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}.tar.gz \
-    && tar -xzvf cmake-${CMAKE_VERSION}.tar.gz \
-    && rm cmake-${CMAKE_VERSION}.tar.gz \
-    && mv cmake-${CMAKE_VERSION} cmake
+RUN echo "Fetching CMake ${CMAKE_VERSION} from ${CMAKE_URL}" \
+    && curl -L -o cmake.tar.gz "${CMAKE_URL}" \
+    && file cmake.tar.gz \
+    && mkdir cmake \
+    && tar -C cmake --strip-components=1 -xvf cmake.tar.gz cmake-${CMAKE_VERSION}/ \
+    && rm cmake.tar.gz
 WORKDIR /root/cmake
-RUN mkdir sysroot \
+RUN echo "Bootstrapping CMake using $(nproc) parallel nodes." \
+    && mkdir sysroot \
     && ./bootstrap --parallel=$(nproc) --prefix=$(pwd)/sysroot -- -DCMAKE_BUILD_TYPE:STRING=Release
 
 
 FROM raspbian-build-essential AS raspbian-cmake-compiled
 WORKDIR /root/cmake
 COPY --from=raspbian-cmake-bootstrapped /root/cmake .
-RUN make -j $(nproc) \
+RUN echo "Compiling CMake using $(nproc) parallel jobs." \
+    && make -j $(nproc) \
     && make install
 
 
