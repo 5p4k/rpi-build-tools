@@ -1,4 +1,4 @@
-image: docker:stable
+image: arm32v6/docker:stable
 
 before_script:
   - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN git-registry.mittelab.org
