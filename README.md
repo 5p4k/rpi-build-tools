@@ -1,8 +1,8 @@
 RPi Build Tools
 ===
 
-**Official repo: ** [https://git.mittelab.org/5p4k/rpi-build-tools][repo_url]
-**Build status: ** [![pipeline status][pipeline_svg]][pipeline]
+**Official repo:** [https://git.mittelab.org/5p4k/rpi-build-tools][repo_url]  
+**Build status:** [![pipeline status][pipeline_svg]][pipeline]
 
 This is an attempt at providing more up-to-date build tools on the Raspberry Pi. At the moment of
 writing, compiling C++17 is absolutely off limits on the Raspberry Pi, as it requires to manually
