@@ -3,17 +3,23 @@ image: docker:stable
 services:
   - docker:dind
 
-variables:
-  CONTAINER_IMAGE: git-registry.mittelab.org/$CI_PROJECT_PATH/raspbian-cmake
-
-
 before_script:
   - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN git-registry.mittelab.org
 
-build:
+.build_job: &build_template
   stage: build
+  before_script:
+    - export CONTAINER_IMAGE="git-registry.mittelab.org/$CI_PROJECT_PATH/$IMAGE_TAG"
   script:
     - docker pull $CONTAINER_IMAGE:latest || true
-    - docker build --cache-from $CONTAINER_IMAGE:latest --tag $CONTAINER_IMAGE:$CI_COMMIT_SHA --tag $CONTAINER_IMAGE:latest .
+    - docker build --cache-from $CONTAINER_IMAGE:latest --tag $CONTAINER_IMAGE:$CI_COMMIT_SHA --tag $CONTAINER_IMAGE:latest $IMAGE_TAG
     - docker push $CONTAINER_IMAGE:$CI_COMMIT_SHA
     - docker push $CONTAINER_IMAGE:latest
+  variables:
+    CONTAINER_IMAGE: git-registry.mittelab.org/$CI_PROJECT_PATH/$IMAGE_TAG
+
+
+build:cmake:
+  <<: *build_template
+  variables:
+    IMAGE_TAG: raspbian-cmake
