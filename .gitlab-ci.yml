@@ -1,6 +1,7 @@
-image: arm32v6/docker:stable
+image: docker:stable
 
 before_script:
+  - docker run --rm --privileged multiarch/qemu-user-static:register --reset
   - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN git-registry.mittelab.org
 
 .build_job: &build_template
