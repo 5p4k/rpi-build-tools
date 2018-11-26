@@ -4,7 +4,8 @@ ARG CMAKE_VERSION=3.12.4
 FROM resin/rpi-raspbian AS raspbian-build-essential
 RUN apt-get -qq update \
     && apt-get -qq install -y --no-install-recommends \
-        build-essential
+        build-essential \
+        file
 
 
 FROM raspbian-build-essential AS raspbian-cmake-bootstrapped
