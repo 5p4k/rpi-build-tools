@@ -1,6 +1,3 @@
-LABEL maintainer="Pietro Saccardi <lizardm4@gmail.com>"
-
-
 ARG CMAKE_VERSION=3.12.4
 
 
@@ -29,4 +26,5 @@ RUN make -j $(nproc) \
 
 
 FROM raspbian-build-essential
+LABEL maintainer="Pietro Saccardi <lizardm4@gmail.com>"
 COPY --from=raspbian-cmake-compiled /root/cmake/sysroot /usr/local
