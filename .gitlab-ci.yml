@@ -17,4 +17,4 @@ image: docker:stable
 build:cmake:
   <<: *build_template
   variables:
-    IMAGE_TAG: raspbian-cmake
+    IMAGE_TAG: debian-clang
