@@ -7,7 +7,7 @@ RUN apk add --update \
         curl \
         file \
         unzip \
-    && export LLVM_PROJECTS_TOOLS="llvm clang clang-tools-extra lld polly compiler-rt openmp libcxx libcxxabi" \
+    && export LLVM_PROJECTS_TOOLS="llvm clang lld" \
     && for PROJ_TOOL in ${LLVM_PROJECTS_TOOLS}; do \
         export PROJ_TOOL_URL="https://github.com/llvm-mirror/${PROJ_TOOL}/archive/release_${LLVM_VERSION}.zip"; \
         echo "Pulling ${PROJ_TOOL} from ${PROJ_TOOL_URL}"; \
@@ -19,15 +19,8 @@ RUN apk add --update \
         rm ${PROJ_TOOL}.zip; \
         mv ${PROJ_TOOL}-release_${LLVM_VERSION} ${PROJ_TOOL}; \
     done \
-    && mv compiler-rt llvm/projects \
-    && mv libcxx llvm/projects \
-    && mv libcxxabi llvm/projects \
-    && mv openmp llvm/projects \
     && mv clang llvm/tools \
-    && mv lld llvm/tools \
-    && mv polly llvm/tools \
-    && mv clang-tools-extra llvm/tools/clang/tools \
-    && rm -rf clang-tools-extra
+    && mv lld llvm/tools
 
 
 FROM debian AS builder-compiled
