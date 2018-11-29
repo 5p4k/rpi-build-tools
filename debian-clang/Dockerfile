@@ -46,12 +46,15 @@ RUN apt-get -qq update \
         -DCMAKE_BUILD_TYPE=MinSizeRel \
         -DCMAKE_INSTALL_PREFIX=/root/prefix \
         -DLLVM_OPTIMIZED_TABLEGEN=ON \
-        -DLLVM_TARGETS_TO_BUILD="AArch64;ARM;X86" \
+        -DLLVM_TARGETS_TO_BUILD="ARM" \
         -DLLVM_INCLUDE_TESTS=OFF \
         /root/llvm \
     && echo "Compiling LLVM using $(nproc) parallel jobs." \
     && make -j$(nproc) \
-    && make install
+    && make install \
+    && chown -R root:staff /root/prefix \
+    && echo "Total size of the toolchain:" \
+    && du -sh /root/prefix
 
 
 FROM debian
