@@ -14,7 +14,12 @@ image: docker:stable
     - docker push $CONTAINER_IMAGE:latest
 
 
-build:cmake:
+build:debian-clang-target-arm:
   <<: *build_template
   variables:
     IMAGE_TAG: debian-clang-target-arm
+
+build:rpi-crosscompile:
+  <<: *build_template
+  variables:
+    IMAGE_TAG: rpi-crosscompile
