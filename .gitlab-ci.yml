@@ -4,7 +4,7 @@ image: docker:stable
 .build_job: &build_template
   stage: build
   before_script:
-    - docker run --rm --privileged multiarch/qemu-user-static:register --reset
+    # - docker run --rm --privileged multiarch/qemu-user-static:register --reset
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN git-registry.mittelab.org
     - export CONTAINER_IMAGE="git-registry.mittelab.org/$CI_PROJECT_PATH/$IMAGE_TAG"
   script:
