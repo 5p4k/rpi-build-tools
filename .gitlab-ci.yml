@@ -6,20 +6,17 @@ image: docker:stable
   before_script:
     # - docker run --rm --privileged multiarch/qemu-user-static:register --reset
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN git-registry.mittelab.org
-    - export CONTAINER_IMAGE="git-registry.mittelab.org/$CI_PROJECT_PATH/$IMAGE_TAG"
+    - export CONTAINER_IMAGE="git-registry.mittelab.org/$CI_PROJECT_PATH/$image_tag"
   script:
     - docker pull $CONTAINER_IMAGE:latest || true
-    - docker build --cache-from $CONTAINER_IMAGE:latest --tag $CONTAINER_IMAGE:$CI_COMMIT_SHA --tag $CONTAINER_IMAGE:latest $IMAGE_TAG
+    - docker build --cache-from $CONTAINER_IMAGE:latest --tag $CONTAINER_IMAGE:$CI_COMMIT_SHA --tag $CONTAINER_IMAGE:latest $extra_args $workdir
     - docker push $CONTAINER_IMAGE:$CI_COMMIT_SHA
     - docker push $CONTAINER_IMAGE:latest
 
 
-build:debian-clang-target-arm:
+build:llvm-toolchain:
   <<: *build_template
   variables:
-    IMAGE_TAG: debian-clang-target-arm
-
-build:rpi-crosscompile:
-  <<: *build_template
-  variables:
-    IMAGE_TAG: rpi-crosscompile
+    image_tag: llvm-7-arm
+    workdir: llvm-toolchain
+    extra_args: --build-arg LLVM_VERSION=70 --build-arg LLVM_TARGETS=ARM
