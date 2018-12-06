@@ -1,21 +1,38 @@
-FROM resin/rpi-raspbian AS raspbian-build
-RUN apt-get -qq update \
-    && apt-get -qq install -y --no-install-recommends \
-        libc-dev-bin \
-        libc6-dev \
-        libstdc++-4.9-dev \
-        linux-libc-dev
-
-FROM git-registry.mittelab.org/5p4k/rpi-build-tools/debian-clang-target-arm
-COPY --from=raspbian-build /lib /root/sysroot/lib
-COPY --from=raspbian-build /usr/include /root/sysroot/usr/include
-COPY --from=raspbian-build /usr/lib /root/sysroot/usr/lib
-COPY --from=raspbian-build /usr/local/include /root/sysroot/usr/local/include
-COPY --from=raspbian-build /usr/local/lib /root/sysroot/usr/local/lib
-# Also relevant, but included in the previous copies
-# COPY --from=raspbian-build /lib/arm-linux-gnueabihf /root/sysroot/lib/arm-linux-gnueabihf
-# COPY --from=raspbian-build /usr/include/arm-linux-gnueabihf /root/sysroot/usr/include/arm-linux-gnueabihf
-# COPY --from=raspbian-build /usr/lib/arm-linux-gnueabihf /root/sysroot/usr/lib/arm-linux-gnueabihf
-# COPY --from=raspbian-build /usr/lib/gcc/arm-linux-gnueabihf/4.9/include /root/sysroot/usr/lib/gcc/arm-linux-gnueabihf/4.9/include
-# COPY --from=raspbian-build /usr/lib/gcc/arm-linux-gnueabihf/4.9/include-fixed /root/sysroot/usr/lib/gcc/arm-linux-gnueabihf/4.9/include-fixed
-COPY clang-arm-linux-gnueabihf clang++-arm-linux-gnueabihf /usr/local/bin/
+FROM git-registry.mittelab.org/5p4k/rpi-build-tools/llvm-7-arm
+COPY fetch-llvm-src.sh /root/
+WORKDIR /root
+RUN dpkg --add-architecture armhf \
+    && apt-get update \
+    && apt-get install -yy --no-install-recommends \
+        cmake \
+        make \
+        unzip \
+        curl \
+        ca-certificates \
+        file \
+        python \
+        libc6-dev:armhf \
+        libgcc-6-dev:armhf \
+        libstdc++-6-dev:armhf \
+    && /bin/bash fetch-llvm-src.sh -t "" llvm
+WORKDIR /root/build
+RUN mkdir /root/prefix \
+    && LD_FLAGS="-fuse-ld=lld" \
+    && TARGET_TRIPLE="arm-linux-gnueabihf" \
+    && ARCH_FLAGS="--target=${TARGET_TRIPLE} -march=armv6l -mfloat-abi=hard -mfpu=vfp" \
+    && cmake \
+        -DCMAKE_CROSSCOMPILING=True \
+        -DCMAKE_CXX_FLAGS="${ARCH_FLAGS}" \
+        -DCMAKE_C_FLAGS="${ARCH_FLAGS}" \
+        -DCMAKE_C_COMPILER_TARGET="${TARGET_TRIPLE}" \
+        -DCMAKE_CXX_COMPILER_TARGET="${TARGET_TRIPLE}" \
+        -DCMAKE_ASM_FLAGS="${ARCH_FLAGS}" \
+        -DCMAKE_ASM_COMPILER_TARGET="${TARGET_TRIPLE}" \
+        -DCMAKE_SHARED_LINKER_FLAGS="${LD_FLAGS}" \
+        -DCMAKE_MODULE_LINKER_FLAGS="${LD_FLAGS}" \
+        -DCMAKE_EXE_LINKER_FLAGS="${LD_FLAGS}" \
+        -DCMAKE_BUILD_TYPE=MinSizeRel \
+        -DCMAKE_INSTALL_PREFIX=/root/prefix \
+        -DCOMPILER_RT_DEFAULT_TARGET_ONLY=ON \
+        /root/llvm/projects/compiler-rt \
+    && make -j$(nproc)
