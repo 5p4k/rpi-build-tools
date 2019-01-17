@@ -54,9 +54,11 @@ fi
 
 cd "${TARGET}"
 
-if ![[ -d llvm ]]; then
-    mkdir llvm
-fi
+for FOLDER in llvm llvm/projects llvm/tools; do
+    if ! [[ -d "${FOLDER}" ]]; then
+        mkdir -p "${FOLDER}"
+    fi
+done
 
 for PROJ_TOOL in ${LLVM_PROJECTS_TOOLS}; do
     export PROJ_TOOL_URL="https://github.com/llvm-mirror/${PROJ_TOOL}/archive/release_${LLVM_VERSION}.zip"
@@ -70,8 +72,8 @@ for PROJ_TOOL in ${LLVM_PROJECTS_TOOLS}; do
         mv "${PROJ_TOOL}-release_${LLVM_VERSION}" "${PROJ_TOOL}"
 done
 for PROJ in ${LLVM_PROJECTS}; do
-        mv "${PROJ}" llvm/projects
+        mv "${PROJ}" "llvm/projects/${PROJ}"
 done
 for TOOL in ${LLVM_TOOLS}; do
-        mv "${TOOL}" llvm/tools
+        mv "${TOOL}" "llvm/tools/${TOOL}"
 done
