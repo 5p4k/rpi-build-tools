@@ -1,5 +1,6 @@
 ARG TARGET_TRIPLE=arm-linux-gnueabihf
 ARG LLVM_VERSION=70
+ARG BASE_BUILDER_IMAGE=git-registry.mittelab.org/5p4k/rpi-build-tools/llvm-7-arm
 
 FROM alpine AS builder-sources
 ARG LLVM_VERSION
@@ -9,12 +10,10 @@ RUN apk add --no-cache --update \
         curl \
         file \
         unzip \
-    && export LLVM_PROJECTS="compiler-rt libcxx libcxxabi libunwind" \
-    && export LLVM_TOOLS="clang lld" \
     && ash fetch-llvm-src.sh --no-llvm --projects "libcxx libcxxabi" --tools "" --version "${LLVM_VERSION}"
 
 
-FROM git-registry.mittelab.org/5p4k/rpi-build-tools/llvm-7-arm AS builder-base
+FROM $BASE_BUILDER_IMAGE AS builder-base
 RUN dpkg --add-architecture armhf \
     && apt-get -qq update \
     && apt-get install -yy --no-install-recommends \
@@ -45,6 +44,7 @@ RUN LD_FLAGS="-fuse-ld=lld" \
         -DCMAKE_BUILD_TYPE=MinSizeRel \
         -DCMAKE_INSTALL_PREFIX=/root/prefix \
         /root/llvm/projects/libcxxabi \
+    && echo "Compiling libc++abi using $(nproc) parallel jobs." \
     && make -j $(nproc) \
     && make install \
     && rm -rf *
@@ -69,12 +69,13 @@ RUN LD_FLAGS="-fuse-ld=lld" \
         -DLIBCXX_CXX_ABI=libcxxabi \
         -DLIBCXX_CXX_ABI_INCLUDE_PATHS=/root/llvm/projects/libcxxabi/include \
         /root/llvm/projects/libcxx \
+    && echo "Compiling libc++ using $(nproc) parallel jobs." \
     && make -j $(nproc) \
     && make install \
     && rm -rf *
 
 
-FROM git-registry.mittelab.org/5p4k/rpi-build-tools/llvm-7-arm
+FROM $BASE_BUILDER_IMAGE
 ARG TARGET_TRIPLE
 RUN dpkg --add-architecture armhf \
     && apt-get -qq update \
