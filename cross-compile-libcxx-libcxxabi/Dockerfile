@@ -16,7 +16,7 @@ RUN apk add --no-cache --update \
 
 FROM git-registry.mittelab.org/5p4k/rpi-build-tools/llvm-7-arm AS builder-base
 RUN dpkg --add-architecture armhf \
-    && apt-get update \
+    && apt-get -qq update \
     && apt-get install -yy --no-install-recommends \
         cmake \
         make \
@@ -77,7 +77,7 @@ RUN LD_FLAGS="-fuse-ld=lld" \
 FROM git-registry.mittelab.org/5p4k/rpi-build-tools/llvm-7-arm
 ARG TARGET_TRIPLE
 RUN dpkg --add-architecture armhf \
-    && apt-get update \
+    && apt-get -qq update \
     && apt-get install -yy --no-install-recommends \
         cmake \
         make \
