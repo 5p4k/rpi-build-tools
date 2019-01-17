@@ -1,24 +1,26 @@
 ARG LLVM_VERSION=70
 ARG LLVM_TARGETS=ARM
+ARG LLVM_PROJECTS=""
+ARG LLVM_TOOLS="clang lld"
 
 
 FROM alpine AS builder-sources
 ARG LLVM_VERSION
+ARG LLVM_PROJECTS
+ARG LLVM_TOOLS
 WORKDIR /root
 COPY fetch-llvm-src.sh ./
 RUN apk add --no-cache --update \
         curl \
         file \
         unzip \
-    && export LLVM_PROJECTS="compiler-rt libcxx libcxxabi libunwind" \
-    && export LLVM_TOOLS="clang lld" \
     && ash fetch-llvm-src.sh --projects "${LLVM_PROJECTS}" --tools "${LLVM_TOOLS}" --version "${LLVM_VERSION}"
 
 
 FROM debian:stretch-backports AS builder-compiled
 ARG LLVM_TARGETS
 RUN apt-get -qq update \
-    && apt-get -t stretch-backports -qq install -y --no-install-recommends \
+    && apt-get -t stretch-backports -qq install -yy --no-install-recommends \
         cmake \
         python \
         libc++-dev \
@@ -38,22 +40,13 @@ RUN mkdir /root/prefix \
     && LD_FLAGS="${LD_FLAGS} -Wl,-rpath-link ${LLVM_TOOLCHAIN_LIB_DIR}" \
     && LD_FLAGS="${LD_FLAGS} -lc++ -lc++abi" \
     && CXX_FLAGS="-Wno-unused-command-line-argument" \
-    # && CXX_FLAGS="${LD_FLAGS} -Wl,-L ${LLVM_TOOLCHAIN_LIB_DIR}" \
-    # && CXX_FLAGS="${CXX_FLAGS} -stdlib=libc++ -pthread" \
     && CXX_FLAGS="${CXX_FLAGS} -stdlib=libc++" \
     && cmake \
         -DCMAKE_C_COMPILER=clang-6.0 \
         -DCMAKE_CXX_COMPILER=clang++-6.0 \
         -DCMAKE_ASM_COMPILER=clang-6.0 \
         -DLLVM_ENABLE_PIC=NO \
-        # -DLLVM_ENABLE_LIBCXX=YES \
-        # -DLLVM_ENABLE_ASSERTIONS=YES \
         -DLLVM_TARGETS_TO_BUILD="${LLVM_TARGETS}" \
-        # -DLLVM_ENABLE_SPHINX=NO \
-        # -DLLVM_ENABLE_THREADS=YES \
-        # -DLLVM_INSTALL_UTILS=YES \
-        # -DLIBCXX_ENABLE_EXCEPTIONS=YES \
-        # -DLIBCXX_ENABLE_RTTI=YES \
         -DCMAKE_CXX_FLAGS="${CXX_FLAGS}" \
         -DCMAKE_SHARED_LINKER_FLAGS="${LD_FLAGS}" \
         -DCMAKE_MODULE_LINKER_FLAGS="${LD_FLAGS}" \
@@ -65,11 +58,8 @@ RUN mkdir /root/prefix \
         -DLIBCXX_USE_COMPILER_RT=YES \
         -DLIBCXXABI_USE_COMPILER_RT=YES \
         -DLLVM_ENABLE_LLD=YES \
-        # -DLIBCXX_ENABLE_STATIC=YES \
         -DLIBCXX_CXX_ABI=libcxxabi \
         -DLIBCXX_CXX_ABI_INCLUDE_PATHS=/usr/include/libcxxabi \
-        # -DLIBCXX_ENABLE_STATIC_ABI_LIBRARY=YES \
-        # -DLIBUNWIND_ENABLE_STATIC=YES \
         -DLIBCXXABI_USE_LLVM_UNWINDER=YES \
         /root/llvm \
     && echo "Total size of Makefiles:" \
@@ -90,4 +80,3 @@ RUN update-alternatives --install /usr/bin/cc cc /usr/local/bin/clang 100 \
     && update-alternatives --install /usr/bin/c++ c++ /usr/local/bin/clang++ 100 \
     && update-alternatives --install /usr/bin/cpp cpp /usr/local/bin/clang++ 100 \
     && update-alternatives --install /usr/bin/ld ld /usr/local/bin/lld 100
-

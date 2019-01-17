@@ -2,11 +2,12 @@
 LLVM_VERSION=70
 LLVM_PROJECTS="compiler-rt libcxx libcxxabi libunwind"
 LLVM_TOOLS="clang lld"
+LLVM=1
 TARGET="$(pwd)"
 
 function help() {
     echo "Usage: download and arrange LLVM sources."
-    echo "       $0 [-v|--version <llvm_version>] [--projects|-p <llvm_projects>] [--tools|-t <llvm_tools>] [<target>]"
+    echo "       $0 [-v|--version <llvm_version>] [--projects|-p <llvm_projects>] [--tools|-t <llvm_tools>] [--no-llvm] [<target>]"
     echo ""
     echo "Usage: display this help."
     echo "       $0 -h|--help"
@@ -35,6 +36,9 @@ while [[ $# -gt 0 ]]; do
             shift
             LLVM_PROJECTS="$1"
             ;;
+        --no-llvm)
+            LLVM=0
+            ;;
         *)
             TARGET="$1"
             ;;
@@ -42,9 +46,18 @@ while [[ $# -gt 0 ]]; do
     shift
 done
 
-LLVM_PROJECTS_TOOLS="llvm ${LLVM_PROJECTS} ${LLVM_TOOLS}"
+LLVM_PROJECTS_TOOLS="${LLVM_PROJECTS} ${LLVM_TOOLS}"
+
+if [[ ${LLVM} -ne 0 ]]; then
+    LLVM_PROJECTS_TOOLS="${LLVM_PROJECTS_TOOLS} llvm"
+fi
 
 cd "${TARGET}"
+
+if ![[ -d llvm ]]; then
+    mkdir llvm
+fi
+
 for PROJ_TOOL in ${LLVM_PROJECTS_TOOLS}; do
     export PROJ_TOOL_URL="https://github.com/llvm-mirror/${PROJ_TOOL}/archive/release_${LLVM_VERSION}.zip"
     echo "Pulling ${PROJ_TOOL} from ${PROJ_TOOL_URL}"
