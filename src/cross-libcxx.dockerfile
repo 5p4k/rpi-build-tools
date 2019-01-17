@@ -1,6 +1,8 @@
-ARG TARGET_TRIPLE=arm-linux-gnueabihf
 ARG LLVM_VERSION=70
-ARG BASE_BUILDER_IMAGE=git-registry.mittelab.org/5p4k/rpi-build-tools/llvm-7-arm
+ARG TARGET_TRIPLE=arm-linux-gnueabihf
+ARG TARGET_ARCH_FLAGS="-march=armv6 -mfloat-abi=hard -mfpu=vfp"
+ARG BASE_BUILDER_IMAGE=git-registry.mittelab.org/5p4k/rpi-build-tools/llvm7-arm
+
 
 FROM alpine AS builder-sources
 ARG LLVM_VERSION
@@ -31,7 +33,7 @@ RUN mkdir /root/prefix
 FROM builder-base AS builder-libcxxabi
 ARG TARGET_TRIPLE
 RUN LD_FLAGS="-fuse-ld=lld" \
-    && ARCH_FLAGS="--target=${TARGET_TRIPLE} -march=armv6 -mfloat-abi=hard -mfpu=vfp" \
+    && ARCH_FLAGS="--target=${TARGET_TRIPLE} ${TARGET_ARCH_FLAGS}" \
     && cmake \
         -DCMAKE_CROSSCOMPILING=True \
         -DCMAKE_CXX_FLAGS="${ARCH_FLAGS}" \
@@ -54,7 +56,7 @@ FROM builder-base AS builder-libcxx
 ARG TARGET_TRIPLE
 COPY --from=builder-libcxxabi /root/prefix/lib /usr/lib/$TARGET_TRIPLE/
 RUN LD_FLAGS="-fuse-ld=lld" \
-    && ARCH_FLAGS="--target=${TARGET_TRIPLE} -march=armv6 -mfloat-abi=hard -mfpu=vfp" \
+    && ARCH_FLAGS="--target=${TARGET_TRIPLE} ${TARGET_ARCH_FLAGS}" \
     && cmake \
         -DCMAKE_CROSSCOMPILING=True \
         -DCMAKE_CXX_FLAGS="${ARCH_FLAGS}" \
@@ -77,15 +79,17 @@ RUN LD_FLAGS="-fuse-ld=lld" \
 
 FROM $BASE_BUILDER_IMAGE
 ARG TARGET_TRIPLE
-RUN dpkg --add-architecture armhf \
-    && apt-get -qq update \
+RUN apt-get -qq update \
     && apt-get install -yy --no-install-recommends \
         cmake \
         make \
-        binutils \
-        libc6-dev:armhf \
-        libgcc-6-dev:armhf \
-        libstdc++-6-dev:armhf
+        binutils
 COPY --from=builder-libcxxabi /root/prefix/lib /usr/lib/$TARGET_TRIPLE/
 COPY --from=builder-libcxx    /root/prefix/lib /usr/lib/$TARGET_TRIPLE/
 COPY --from=builder-libcxx    /root/prefix/include /usr/lib/include/
+RUN dpkg --add-architecture armhf \
+    && apt-get -qq update \
+    && apt-get install -yy --no-install-recommends \
+        libc6-dev:armhf \
+        libgcc-6-dev:armhf \
+    && echo "libc6 and libgcc-6 are compiled for armv7, install those from raspbian."
