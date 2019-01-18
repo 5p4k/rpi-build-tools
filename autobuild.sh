@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 function usage() {
     echo "$0 [--build-arg KEY=VAL [...]] --image-tag IMAGE_TAG DOCKERFILE"

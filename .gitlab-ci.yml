@@ -3,7 +3,7 @@ build:llvm7-arm:
   stage: build
   script:
     - ls
-    - bash autobuild.sh
+    - ./autobuild.sh
       --image-tag llvm7-arm
       --build-arg LLVM_VERSION=70
       --build-arg LLVM_TARGETS=ARM
@@ -16,7 +16,7 @@ build:llvm7-arm:
 #   image: docker:stable
 #   stage: build
 #   script:
-#     - bash autobuild.sh
+#     - ./autobuild.sh
 #       --image-tag cross-libcxx-armv6
 #       --build-arg LLVM_VERSION=70
 #       --build-arg TARGET_TRIPLE=arm-linux-gnueabihf
