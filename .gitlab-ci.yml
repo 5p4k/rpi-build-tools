@@ -13,16 +13,16 @@ build:llvm7-arm:
       src/llvm-toolchain.dockerfile
 
 
-# build:cross-libcxx-armv6:
-#   image: docker:stable
-#   stage: build
-#  before_script:
-#    - apk add --no-cache --update bash
-#   script:
-#     - bash autobuild.sh
-#       --image-tag cross-libcxx-armv6
-#       --build-arg LLVM_VERSION=70
-#       --build-arg TARGET_TRIPLE=arm-linux-gnueabihf
-#       --build-arg TARGET_ARCH_FLAGS="-march=armv6 -mfloat-abi=hard -mfpu=vfp"
-#       --build-arg BASE_BUILDER_IMAGE=$CI_REGISTRY/$CI_PROJECT_PATH/llvm7-arm
-#       src/cross-libcxx.dockerfile
+build:cross-libcxx-armv6:
+  image: docker:stable
+  stage: build
+ before_script:
+   - apk add --no-cache --update bash
+  script:
+    - bash autobuild.sh
+      --image-tag cross-libcxx-armv6
+      --build-arg LLVM_VERSION=70
+      --build-arg TARGET_TRIPLE=arm-linux-gnueabihf
+      --build-arg TARGET_ARCH_FLAGS="-march=armv6 -mfloat-abi=hard -mfpu=vfp"
+      --build-arg BASE_BUILDER_IMAGE=$CI_REGISTRY/$CI_PROJECT_PATH/llvm7-arm
+      src/cross-libcxx.dockerfile
