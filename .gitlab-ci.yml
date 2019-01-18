@@ -9,8 +9,7 @@ image: docker:stable
     - export CONTAINER_IMAGE="$CI_REGISTRY/$CI_PROJECT_PATH/$image_tag"
   script:
     - docker pull $CONTAINER_IMAGE:latest || true
-    - >
-      echo docker build
+    - docker build
         --cache-from $CONTAINER_IMAGE:latest
         --tag $CONTAINER_IMAGE:$CI_COMMIT_SHA
         --tag $CONTAINER_IMAGE:latest
@@ -27,8 +26,7 @@ build:llvm7-arm:
     image_tag: llvm7-arm
     workdir: src
     dockerfile: src/llvm-toolchain.dockerfile
-    extra_args: >
-      --build-arg LLVM_VERSION=70
+    extra_args: --build-arg LLVM_VERSION=70
       --build-arg LLVM_TARGETS=ARM
       --build-arg LLVM_PROJECTS=""
       --build-arg LLVM_TOOLS="clang lld"
@@ -40,8 +38,7 @@ build:cross-libcxx-armv6:
     image_tag: cross-libcxx-armv6
     workdir: src
     dockerfile: src/cross-libcxx.dockerfile
-    extra_args: >
-      --build-arg LLVM_VERSION=70
+    extra_args: --build-arg LLVM_VERSION=70
       --build-arg TARGET_TRIPLE=arm-linux-gnueabihf
       --build-arg TARGET_ARCH_FLAGS="-march=armv6 -mfloat-abi=hard -mfpu=vfp"
       --build-arg BASE_BUILDER_IMAGE=$CI_REGISTRY/$CI_PROJECT_PATH/llvm7-arm
