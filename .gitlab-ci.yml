@@ -16,7 +16,7 @@ build:llvm7-arm:
 build:cross-libcxx-armv6:
   image: docker:stable
   stage: build
- before_script:
+  before_script:
    - apk add --no-cache --update bash
   script:
     - bash autobuild.sh
