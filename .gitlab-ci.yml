@@ -10,7 +10,7 @@ image: docker:stable
   script:
     - docker pull $CONTAINER_IMAGE:latest || true
     - >
-      docker build
+      echo docker build
         --cache-from $CONTAINER_IMAGE:latest
         --tag $CONTAINER_IMAGE:$CI_COMMIT_SHA
         --tag $CONTAINER_IMAGE:latest
