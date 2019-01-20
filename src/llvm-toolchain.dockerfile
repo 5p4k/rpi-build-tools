@@ -76,7 +76,12 @@ RUN mkdir /root/prefix \
 
 FROM debian:stretch-backports
 COPY --from=builder-compiled /root/prefix /usr/local
-RUN update-alternatives --install /usr/bin/cc cc /usr/local/bin/clang 100 \
+RUN apt-get -qq update \
+    && apt-get -t stretch-backports -qq install -yy --no-install-recommends \
+        python \
+        libc++1 \
+        libc++abi1 \
+    && update-alternatives --install /usr/bin/cc cc /usr/local/bin/clang 100 \
     && update-alternatives --install /usr/bin/c++ c++ /usr/local/bin/clang++ 100 \
     && update-alternatives --install /usr/bin/cpp cpp /usr/local/bin/clang++ 100 \
     && update-alternatives --install /usr/bin/ld ld /usr/local/bin/lld 100
