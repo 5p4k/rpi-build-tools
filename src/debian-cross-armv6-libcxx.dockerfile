@@ -1,7 +1,7 @@
 ARG LLVM_VERSION=70
 ARG TARGET_TRIPLE=arm-linux-gnueabihf
 ARG TARGET_ARCH_FLAGS="-march=armv6 -mfloat-abi=hard -mfpu=vfp"
-ARG BASE_BUILDER_IMAGE=git-registry.mittelab.org/5p4k/rpi-build-tools/llvm7-arm
+ARG BASE_BUILDER_IMAGE=git-registry.mittelab.org/5p4k/rpi-build-tools/llvm7-armv6-sysroot
 
 
 FROM alpine AS builder-sources
@@ -16,26 +16,26 @@ RUN apk add --no-cache --update \
 
 
 FROM $BASE_BUILDER_IMAGE AS builder-base
-RUN dpkg --add-architecture armhf \
-    && apt-get -qq update \
+RUN apt-get -qq update \
     && apt-get install -yy --no-install-recommends \
         cmake \
         make \
-        binutils \
-        libc6-dev:armhf \
-        libgcc-6-dev:armhf \
-        libstdc++-6-dev:armhf
+        binutils
+
+
+FROM builder-base AS builder-base-sources
 COPY --from=builder-sources /root /root/
 WORKDIR /root/build
 RUN mkdir /root/prefix
 
 
-FROM builder-base AS builder-libcxxabi
+FROM builder-base-sources AS builder-libcxxabi
 ARG TARGET_TRIPLE
 RUN LD_FLAGS="-fuse-ld=lld" \
     && ARCH_FLAGS="--target=${TARGET_TRIPLE} ${TARGET_ARCH_FLAGS}" \
     && cmake \
         -DCMAKE_CROSSCOMPILING=True \
+        -DCMAKE_SYSROOT=/root/sysroot \
         -DCMAKE_CXX_FLAGS="${ARCH_FLAGS}" \
         -DCMAKE_C_FLAGS="${ARCH_FLAGS}" \
         -DCMAKE_C_COMPILER_TARGET="${TARGET_TRIPLE}" \
@@ -52,13 +52,14 @@ RUN LD_FLAGS="-fuse-ld=lld" \
     && rm -rf *
 
 
-FROM builder-base AS builder-libcxx
+FROM builder-base-sources AS builder-libcxx
 ARG TARGET_TRIPLE
-COPY --from=builder-libcxxabi /root/prefix/lib /usr/lib/$TARGET_TRIPLE/
+COPY --from=builder-libcxxabi /root/sysroot/lib /usr/lib/$TARGET_TRIPLE/
 RUN LD_FLAGS="-fuse-ld=lld" \
     && ARCH_FLAGS="--target=${TARGET_TRIPLE} ${TARGET_ARCH_FLAGS}" \
     && cmake \
         -DCMAKE_CROSSCOMPILING=True \
+        -DCMAKE_SYSROOT=/root/sysroot \
         -DCMAKE_CXX_FLAGS="${ARCH_FLAGS}" \
         -DCMAKE_C_FLAGS="${ARCH_FLAGS}" \
         -DCMAKE_C_COMPILER_TARGET="${TARGET_TRIPLE}" \
@@ -77,19 +78,6 @@ RUN LD_FLAGS="-fuse-ld=lld" \
     && rm -rf *
 
 
-FROM $BASE_BUILDER_IMAGE
-ARG TARGET_TRIPLE
-RUN apt-get -qq update \
-    && apt-get install -yy --no-install-recommends \
-        cmake \
-        make \
-        binutils
-COPY --from=builder-libcxxabi /root/prefix/lib /usr/lib/$TARGET_TRIPLE/
-COPY --from=builder-libcxx    /root/prefix/lib /usr/lib/$TARGET_TRIPLE/
-COPY --from=builder-libcxx    /root/prefix/include /usr/lib/include/
-RUN dpkg --add-architecture armhf \
-    && apt-get -qq update \
-    && apt-get install -yy --no-install-recommends \
-        libc6-dev:armhf \
-        libgcc-6-dev:armhf \
-    && echo "libc6 and libgcc-6 are compiled for armv7, install those from raspbian."
+FROM builder-base
+COPY --from=builder-libcxxabi /root/prefix /root/sysroot
+COPY --from=builder-libcxx    /root/prefix /root/sysroot
