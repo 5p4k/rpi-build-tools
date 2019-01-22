@@ -65,7 +65,7 @@ for ARG in "${BUILD_ARGS[@]}"; do
 done
 
 
-BUILD_CMDLINE+=("--cache-from" "${CONTAINER_IMAGE}:latest")
+# BUILD_CMDLINE+=("--cache-from" "${CONTAINER_IMAGE}:latest")
 BUILD_CMDLINE+=("--file" "${DOCKERFILE}")
 BUILD_CMDLINE+=("--tag" "${CONTAINER_IMAGE}:${CI_COMMIT_SHA}")
 BUILD_CMDLINE+=("--tag" "${CONTAINER_IMAGE}:latest")
