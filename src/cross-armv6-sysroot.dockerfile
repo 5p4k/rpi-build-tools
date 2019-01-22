@@ -20,7 +20,11 @@ RUN apt-get -qq update \
         libc-dev-bin:armhf \
         libc6-dev:armhf \
         libc6:armhf \
+        libgcc-4.7-dev:armhf \
         libgcc1:armhf \
+        libgomp1:armhf \
+        libstdc++6-4.7-dev:armhf \
+        libstdc++6:armhf \
         linux-libc-dev:armhf \
     && for pkg in *.deb; do \
             dpkg-deb --extract "${pkg}" /root/sysroot; \
