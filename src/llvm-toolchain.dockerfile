@@ -13,8 +13,8 @@ COPY fetch-llvm-src.sh ./
 RUN apk add --no-cache --update \
         curl \
         file \
-        unzip \
-    && ash fetch-llvm-src.sh --projects "${LLVM_PROJECTS}" --tools "${LLVM_TOOLS}" --version "${LLVM_VERSION}"
+        unzip
+RUN ash fetch-llvm-src.sh --projects "${LLVM_PROJECTS}" --tools "${LLVM_TOOLS}" --version "${LLVM_VERSION}"
 
 
 FROM debian:stretch-backports AS builder-compiled
@@ -63,8 +63,8 @@ RUN mkdir /root/prefix \
         -DLIBCXXABI_USE_LLVM_UNWINDER=YES \
         /root/llvm \
     && echo "Total size of Makefiles:" \
-    && du -sh . \
-    && echo "Compiling LLVM using $(nproc) parallel jobs." \
+    && du -sh .
+RUN echo "Compiling LLVM using $(nproc) parallel jobs." \
     && make -j$(nproc) \
     && make -j$(nproc) install \
     && chown -R root:staff /root/prefix \
@@ -80,8 +80,8 @@ RUN apt-get -qq update \
     && apt-get -t stretch-backports -qq install -yy --no-install-recommends \
         python \
         libc++1 \
-        libc++abi1 \
-    && update-alternatives --install /usr/bin/cc cc /usr/local/bin/clang 100 \
+        libc++abi1
+RUN update-alternatives --install /usr/bin/cc cc /usr/local/bin/clang 100 \
     && update-alternatives --install /usr/bin/c++ c++ /usr/local/bin/clang++ 100 \
     && update-alternatives --install /usr/bin/cpp cpp /usr/local/bin/clang++ 100 \
     && update-alternatives --install /usr/bin/ld ld /usr/local/bin/lld 100
