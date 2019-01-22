@@ -11,8 +11,8 @@ COPY fetch-llvm-src.sh ./
 RUN apk add --no-cache --update \
         curl \
         file \
-        unzip \
-    && ash fetch-llvm-src.sh --no-llvm --projects "libcxx libcxxabi" --tools "" --version "${LLVM_VERSION}"
+        unzip
+RUN ash fetch-llvm-src.sh --no-llvm --projects "libcxx libcxxabi" --tools "" --version "${LLVM_VERSION}"
 
 
 FROM $BASE_BUILDER_IMAGE AS builder-base
@@ -45,8 +45,8 @@ RUN LD_FLAGS="-fuse-ld=lld" \
         -DCMAKE_EXE_LINKER_FLAGS="${LD_FLAGS}" \
         -DCMAKE_BUILD_TYPE=MinSizeRel \
         -DCMAKE_INSTALL_PREFIX=/root/prefix \
-        /root/llvm/projects/libcxxabi \
-    && echo "Compiling libc++abi using $(nproc) parallel jobs." \
+        /root/llvm/projects/libcxxabi
+RUN echo "Compiling libc++abi using $(nproc) parallel jobs." \
     && make -j $(nproc) \
     && make install \
     && rm -rf *
@@ -71,8 +71,8 @@ RUN LD_FLAGS="-fuse-ld=lld" \
         -DCMAKE_INSTALL_PREFIX=/root/prefix \
         -DLIBCXX_CXX_ABI=libcxxabi \
         -DLIBCXX_CXX_ABI_INCLUDE_PATHS=/root/llvm/projects/libcxxabi/include \
-        /root/llvm/projects/libcxx \
-    && echo "Compiling libc++ using $(nproc) parallel jobs." \
+        /root/llvm/projects/libcxx
+RUN echo "Compiling libc++ using $(nproc) parallel jobs." \
     && make -j $(nproc) \
     && make install \
     && rm -rf *

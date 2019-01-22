@@ -7,14 +7,14 @@ RUN apt-get -qq update \
     && apt-get install -yy --no-install-recommends \
         gnupg2 \
         dirmngr \
-    && apt-key adv --no-tty --keyserver keyserver.ubuntu.com --recv-keys 9165938D90FDDD2E \
-    && mv /root/cross-armv6-sources.list /etc/apt/sources.list \
+    && apt-key adv --no-tty --keyserver keyserver.ubuntu.com --recv-keys 9165938D90FDDD2E
+RUN mv /root/cross-armv6-sources.list /etc/apt/sources.list \
     && dpkg --add-architecture armhf \
     && apt-get update \
     && mkdir packages \
-    && mkdir sysroot \
-    && cd packages \
-    && apt-get download \
+    && mkdir sysroot
+WORKDIR /root/packages
+RUN apt-get download \
         gcc-4.7-base:armhf \
         libc-bin:armhf \
         libc-dev-bin:armhf \
@@ -25,22 +25,20 @@ RUN apt-get -qq update \
         libgomp1:armhf \
         libstdc++6-4.7-dev:armhf \
         libstdc++6:armhf \
-        linux-libc-dev:armhf \
-    && for pkg in *.deb; do \
+        linux-libc-dev:armhf
+RUN for pkg in *.deb; do \
             dpkg-deb --extract "${pkg}" /root/sysroot; \
         done \
-    && cd \
-    && rm -rf packages
 
 
 FROM $BASE_BUILDER_IMAGE
-COPY --from=builder-sysroot /root/sysroot /root/sysroot
-COPY arch-check.sh /usr/bin/arch-check
-COPY check-sysroot.sh /root/sysroot/check
 RUN apt-get -qq update \
     && apt-get install -yy --no-install-recommends \
         file \
-        binutils \
-    && chmod +x /usr/bin/arch-check \
+        binutils
+COPY --from=builder-sysroot /root/sysroot /root/sysroot
+COPY arch-check.sh /usr/bin/arch-check
+COPY check-sysroot.sh /root/sysroot/check
+RUN chmod +x /usr/bin/arch-check \
     && chmod +x /root/sysroot/check \
     && /root/sysroot/check
