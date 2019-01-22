@@ -35,3 +35,12 @@ RUN apt-get -qq update \
 
 FROM $BASE_BUILDER_IMAGE
 COPY --from=builder-sysroot /root/sysroot /root/sysroot
+COPY arch-check.sh /usr/bin/arch-check
+COPY check-sysroot.sh /root/sysroot/check
+RUN apt-get -qq update \
+    && apt-get install -yy --no-install-recommends \
+        file \
+        binutils \
+    && chmod +x /usr/bin/arch-check \
+    && chmod +x /root/sysroot/check \
+    && /root/sysroot/check

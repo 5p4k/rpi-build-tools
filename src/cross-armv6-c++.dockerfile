@@ -81,3 +81,4 @@ RUN LD_FLAGS="-fuse-ld=lld" \
 FROM builder-base
 COPY --from=builder-libcxxabi /root/prefix /root/sysroot/usr/
 COPY --from=builder-libcxx    /root/prefix /root/sysroot/usr/
+RUN /root/sysroot/check
