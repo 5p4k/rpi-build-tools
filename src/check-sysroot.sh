@@ -1,0 +1,9 @@
+#!/bin/bash
+
+SYSROOT=$(dirname "$(realpath "$0")")
+
+if [[ $# -gt 0 ]]; then
+    SYSROOT="$1"
+fi
+
+find "$SYSROOT" -type f -print0 | xargs -0 arch-check --ensure v6 --no-print-arch --no-print-matching
