@@ -37,4 +37,4 @@ build:cross-armv6-llvm7-libc++:
       --build-arg TARGET_TRIPLE=arm-linux-gnueabihf
       --build-arg TARGET_ARCH_FLAGS="-march=armv6 -mfloat-abi=hard -mfpu=vfp"
       --build-arg BASE_BUILDER_IMAGE=$CI_REGISTRY/$CI_PROJECT_PATH/cross-armv6-llvm7
-      src/cross-libcxx.dockerfile
+      src/cross-armv6-libc++.dockerfile
