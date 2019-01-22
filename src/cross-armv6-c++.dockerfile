@@ -54,7 +54,7 @@ RUN LD_FLAGS="-fuse-ld=lld" \
 
 FROM builder-base-sources AS builder-libcxx
 ARG TARGET_TRIPLE
-COPY --from=builder-libcxxabi /root/sysroot/lib /usr/lib/$TARGET_TRIPLE/
+COPY --from=builder-libcxxabi /root/prefix /root/sysroot/usr/
 RUN LD_FLAGS="-fuse-ld=lld" \
     && ARCH_FLAGS="--target=${TARGET_TRIPLE} ${TARGET_ARCH_FLAGS}" \
     && cmake \
@@ -79,5 +79,5 @@ RUN LD_FLAGS="-fuse-ld=lld" \
 
 
 FROM builder-base
-COPY --from=builder-libcxxabi /root/prefix /root/sysroot
-COPY --from=builder-libcxx    /root/prefix /root/sysroot
+COPY --from=builder-libcxxabi /root/prefix /root/sysroot/usr/
+COPY --from=builder-libcxx    /root/prefix /root/sysroot/usr/
