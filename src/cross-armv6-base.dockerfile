@@ -26,9 +26,9 @@ RUN apt-get download \
         libstdc++6-4.7-dev:armhf \
         libstdc++6:armhf \
         linux-libc-dev:armhf
-RUN for pkg in *.deb; do \
-            dpkg-deb --extract "${pkg}" /root/sysroot; \
-        done \
+RUN for PKG in *.deb; do \
+            dpkg-deb --extract "${PKG}" /root/sysroot; \
+        done
 
 
 FROM $BASE_BUILDER_IMAGE
