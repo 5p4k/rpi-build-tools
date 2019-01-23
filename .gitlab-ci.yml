@@ -1,40 +1,40 @@
-build:llvm7-arm:
+build:llvm6-arm:
   image: docker:stable
   stage: build
   before_script:
     - apk add --no-cache --update bash
   script:
     - bash autobuild.sh
-      --image-tag llvm7-arm
-      --build-arg LLVM_VERSION=70
+      --image-tag llvm6-arm
+      --build-arg LLVM_VERSION=60
       --build-arg LLVM_TARGETS=ARM
       --build-arg LLVM_PROJECTS=""
       --build-arg LLVM_TOOLS="clang lld"
       src/llvm-toolchain.dockerfile
 
 
-build:cross-armv6-llvm7:
+build:cross-armv6-llvm6:
   image: docker:stable
   stage: build
   before_script:
    - apk add --no-cache --update bash
   script:
     - bash autobuild.sh
-      --image-tag cross-armv6-llvm7
-      --build-arg BASE_BUILDER_IMAGE=$CI_REGISTRY/$CI_PROJECT_PATH/llvm7-arm
+      --image-tag cross-armv6-llvm6
+      --build-arg BASE_BUILDER_IMAGE=$CI_REGISTRY/$CI_PROJECT_PATH/llvm6-arm
       src/cross-armv6-base.dockerfile
 
 
-build:cross-armv6-llvm7-libcxx:
+build:cross-armv6-llvm6-libcxx:
   image: docker:stable
   stage: build
   before_script:
    - apk add --no-cache --update bash
   script:
     - bash autobuild.sh
-      --image-tag cross-armv6-llvm7-libcxx
-      --build-arg LLVM_VERSION=70
+      --image-tag cross-armv6-llvm6-libcxx
+      --build-arg LLVM_VERSION=60
       --build-arg TARGET_TRIPLE=arm-linux-gnueabihf
       --build-arg TARGET_ARCH_FLAGS="-march=armv6 -mfloat-abi=hard -mfpu=vfp"
-      --build-arg BASE_BUILDER_IMAGE=$CI_REGISTRY/$CI_PROJECT_PATH/cross-armv6-llvm7
+      --build-arg BASE_BUILDER_IMAGE=$CI_REGISTRY/$CI_PROJECT_PATH/cross-armv6-llvm6
       src/cross-armv6-libcxx.dockerfile

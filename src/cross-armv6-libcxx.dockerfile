@@ -1,4 +1,4 @@
-ARG LLVM_VERSION=70
+ARG LLVM_VERSION=60
 ARG TARGET_TRIPLE=arm-linux-gnueabihf
 ARG TARGET_ARCH_FLAGS="-march=armv6 -mfloat-abi=hard -mfpu=vfp"
 ARG BASE_BUILDER_IMAGE=git-registry.mittelab.org/5p4k/rpi-build-tools/cross-armv6-llvm7
