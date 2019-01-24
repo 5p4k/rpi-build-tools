@@ -1,7 +1,7 @@
 ARG LLVM_VERSION=60
 ARG TARGET_TRIPLE=arm-linux-gnueabihf
 ARG TARGET_ARCH_FLAGS="-march=armv6 -mfloat-abi=hard -mfpu=vfp"
-ARG BASE_BUILDER_IMAGE=git-registry.mittelab.org/5p4k/rpi-build-tools/cross-armv6-llvm7
+ARG BASE_BUILDER_IMAGE=git-registry.mittelab.org/5p4k/rpi-build-tools/cross-armv6-llvm6
 
 
 FROM alpine AS builder-sources
@@ -17,7 +17,7 @@ RUN ash fetch-llvm-src.sh --no-llvm --projects "libcxx libcxxabi" --tools "" --v
 
 FROM $BASE_BUILDER_IMAGE AS builder-base
 RUN apt-get -qq update \
-    && apt-get install -yy --no-install-recommends \
+    && apt-get install -t stretch-backports -yy --no-install-recommends \
         cmake \
         make \
         binutils
@@ -81,4 +81,10 @@ RUN echo "Compiling libc++ using $(nproc) parallel jobs." \
 FROM builder-base
 COPY --from=builder-libcxxabi /root/prefix /root/sysroot/usr/
 COPY --from=builder-libcxx    /root/prefix /root/sysroot/usr/
-RUN /root/sysroot/check
+COPY RPiToolchain.cmake RPiStaticLibCxxToolchain.cmake /root/
+COPY cpp-armv6-linux-gnueabihf cc-armv6-linux-gnueabihf /usr/bin/
+RUN ln -s /usr/bin/cpp-armv6-linux-gnueabihf /usr/bin/c++-armv6-linux-gnueabihf \
+    && chmod +x /usr/bin/cpp-armv6-linux-gnueabihf \
+    && chmod +x /usr/bin/cc-armv6-linux-gnueabihf \
+    && /root/sysroot/check
+
