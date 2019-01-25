@@ -26,6 +26,10 @@ while [[ $# -gt 0 ]]; do
             shift
             LLVM_VERSION="$1"
             ;;
+        -t|--toolchain)
+            shift
+            TOOLCHAIN_FILE="$1"
+            ;;
         -b|--build|--build-type)
             shift
             BUILD_TYPE="$1"
@@ -69,24 +73,30 @@ BUILD_FOLDER="$(mktemp -d)"
 echo-run "${FETCH_LLVM_SH}" --no-llvm --projects "libcxx libcxxabi" --tools "" --version "${LLVM_VERSION}" "${SOURCE_FOLDER}"
 
 pushd "${BUILD_FOLDER}"
+
+# -Wno-dev suppresses weird warnings about the CMake files
 echo-run cmake \
     -DCMAKE_TOOLCHAIN_FILE="${TOOLCHAIN_FILE}" \
     -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \
     -DCMAKE_INSTALL_PREFIX="${PREFIX}" \
+    -DLIBCXXABI_LIBCXX_PATH="${SOURCE_FOLDER}/llvm/projects/libcxx" \
+    -DLIBCXXABI_LIBCXX_INCLUDES="${SOURCE_FOLDER}/llvm/projects/libcxx/include" \
+    -Wno-dev \
     "${SOURCE_FOLDER}/llvm/projects/libcxxabi"
-echo-run make -j$(nproc)
+echo-run make -j "$(nproc)"
 echo-run make install
-echo-run rm -rf *
+echo-run rm -rf ./*
 echo-run cmake \
     -DCMAKE_TOOLCHAIN_FILE="${TOOLCHAIN_FILE}" \
     -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \
     -DCMAKE_INSTALL_PREFIX="${PREFIX}" \
     -DLIBCXX_CXX_ABI="libcxxabi" \
     -DLIBCXX_CXX_ABI_INCLUDE_PATHS="${SOURCE_FOLDER}/llvm/projects/libcxxabi/include" \
+    -Wno-dev \
     "${SOURCE_FOLDER}/llvm/projects/libcxx"
-echo-run make -j$(nproc)
+echo-run make -j "$(nproc)"
 echo-run make install
-echo-run rm -rf *
+echo-run rm -rf ./*
 popd
 
 echo-run rm -rf "${BUILD_FOLDER}"

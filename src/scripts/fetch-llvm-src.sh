@@ -5,6 +5,28 @@ LLVM_TOOLS="clang lld"
 LLVM=1
 TARGET="$(pwd)"
 
+function optional-run() {
+    if which "$1" > /dev/null; then
+        "$@"
+    fi
+}
+
+function ensure-or-install() {
+    PROG="$1"
+    shift
+    if ! which "${PROG}" > /dev/null; then
+        if [[ "$(whoami)" == "root" ]] && [[ -f /.dockerenv ]]; then
+            echo "You need to install ${PROG} for this to work. I will install it for you since you are root in docker."
+            if ! apt-get install -yy --no-install-recommends "$@"; then
+                exit 1
+            fi
+        else
+            echo "You need ${PROG} for this to work. Please install $*."
+            exit 1
+        fi
+    fi
+}
+
 function help() {
     echo "Usage: download and arrange LLVM sources."
     echo "       $0 [-v|--version <llvm_version>] [--projects|-p <llvm_projects>] [--tools|-t <llvm_tools>] [--no-llvm] [<target>]"
@@ -48,6 +70,9 @@ done
 
 LLVM_PROJECTS_TOOLS="${LLVM_PROJECTS} ${LLVM_TOOLS}"
 
+ensure-or-install curl curl ca-certificates
+ensure-or-install unzip unzip
+
 cd "${TARGET}"
 
 if [[ ${LLVM} -ne 0 ]]; then
@@ -64,7 +89,7 @@ for PROJ_TOOL in ${LLVM_PROJECTS_TOOLS}; do
     export PROJ_TOOL_URL="https://github.com/llvm-mirror/${PROJ_TOOL}/archive/release_${LLVM_VERSION}.zip"
     echo "Pulling ${PROJ_TOOL} from ${PROJ_TOOL_URL}"
     curl -L -o "${PROJ_TOOL}.zip" "${PROJ_TOOL_URL}"
-    file "${PROJ_TOOL}.zip"
+    optional-run file "${PROJ_TOOL}.zip"
 done
 for PROJ_TOOL in ${LLVM_PROJECTS_TOOLS}; do
         unzip -q "${PROJ_TOOL}.zip"

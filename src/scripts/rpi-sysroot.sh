@@ -37,7 +37,7 @@ function usage() {
     echo "$0 -h|--help"
     echo ""
     echo "Default sysroot: ${SYSROOT}"
-    echo "Default pacakge list: ${DEFAULT_PACKAGE_LIST}"
+    echo "Default pacakge list: ${DEFAULT_PACKAGE_LIST[*]}"
 }
 
 
