@@ -1,7 +1,7 @@
 ARG BASE_BUILDER_IMAGE=git-registry.mittelab.org/5p4k/rpi-build-tools/llvm6-arm
 
 FROM debian:stretch-backports AS builder-sysroot
-COPY cross-armv6-sources.list /root
+COPY etc/cross-armv6-sources.list /root
 WORKDIR /root
 RUN apt-get -qq update \
     && apt-get install -yy --no-install-recommends \
@@ -37,8 +37,8 @@ RUN apt-get -qq update \
         file \
         binutils
 COPY --from=builder-sysroot /root/sysroot /root/sysroot
-COPY arch-check.sh /usr/bin/arch-check
-COPY check-sysroot.sh /root/sysroot/check
+COPY scripts/arch-check.sh /usr/bin/arch-check
+COPY scripts/check-sysroot.sh /root/sysroot/check
 RUN chmod +x /usr/bin/arch-check \
     && chmod +x /root/sysroot/check \
     && /root/sysroot/check

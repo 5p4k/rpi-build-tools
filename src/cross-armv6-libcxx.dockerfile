@@ -7,7 +7,7 @@ ARG BASE_BUILDER_IMAGE=git-registry.mittelab.org/5p4k/rpi-build-tools/cross-armv
 FROM alpine AS builder-sources
 ARG LLVM_VERSION
 WORKDIR /root
-COPY fetch-llvm-src.sh ./
+COPY scripts/fetch-llvm-src.sh ./
 RUN apk add --no-cache --update \
         curl \
         file \
@@ -81,8 +81,9 @@ RUN echo "Compiling libc++ using $(nproc) parallel jobs." \
 FROM builder-base
 COPY --from=builder-libcxxabi /root/prefix /root/sysroot/usr/
 COPY --from=builder-libcxx    /root/prefix /root/sysroot/usr/
-COPY RPiToolchain.cmake RPiStaticLibCxxToolchain.cmake /root/
-COPY cpp-armv6-linux-gnueabihf cc-armv6-linux-gnueabihf /usr/bin/
+COPY cmake_toolchains/RPiToolchain.cmake cmake_toolchains/RPiStaticLibCxxToolchain.cmake /root/
+COPY scripts/cpp-armv6-linux-gnueabihf.sh /usr/bin/cpp-armv6-linux-gnueabihf
+COPY scripts/cc-armv6-linux-gnueabihf.sh /usr/bin/cc-armv6-linux-gnueabihf
 RUN ln -s /usr/bin/cpp-armv6-linux-gnueabihf /usr/bin/c++-armv6-linux-gnueabihf \
     && chmod +x /usr/bin/cpp-armv6-linux-gnueabihf \
     && chmod +x /usr/bin/cc-armv6-linux-gnueabihf \
