@@ -10,7 +10,7 @@ build:llvm6-arm:
       --build-arg LLVM_TARGETS=ARM
       --build-arg LLVM_PROJECTS=""
       --build-arg LLVM_TOOLS="clang lld"
-      src/llvm-toolchain.dockerfile
+      src/llvm.dockerfile
 
 
 build:cross-armv6-llvm6:
