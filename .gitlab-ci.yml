@@ -38,3 +38,16 @@ build:cross-armv6-llvm6-libcxx:
       --build-arg TARGET_ARCH_FLAGS="-march=armv6 -mfloat-abi=hard -mfpu=vfp"
       --build-arg BASE_BUILDER_IMAGE=$CI_REGISTRY/$CI_PROJECT_PATH/cross-armv6-llvm6
       src/cross-armv6-libcxx.dockerfile
+
+
+build:rpi-sysroot:
+  image: debian
+  stage: prebuild
+  script:
+    - ./scripts/rpi-sysroot.sh --sysroot ./sysroot
+  artifacts:
+    paths:
+      - sysroot/
+
+
+
