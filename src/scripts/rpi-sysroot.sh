@@ -129,6 +129,8 @@ find "${DOWNLOAD_FOLDER}" -type f -name \*.deb
 
 echo ">> Extracting all packages to ${SYSROOT}..."
 
+[[ -d "${SYSROOT}" ]] || mkdir -p "${SYSROOT}"
+
 find "${DOWNLOAD_FOLDER}" -type f -name \*.deb | while read DEB; do
     echo-run dpkg-deb --extract "${DEB}" "${SYSROOT}"
 done
