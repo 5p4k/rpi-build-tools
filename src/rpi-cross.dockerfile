@@ -26,6 +26,7 @@ RUN chmod +x \
         /usr/bin/cc-armv6-linux-gnueabihf \
     && update-alternatives --install /usr/bin/clang clang /usr/bin/clang-6.0 100 \
     && update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-6.0 100 \
+    && update-alternatives --install /usr/bin/llvm-config llvm-config /usr/bin/llvm-config-6.0 100 \
     && update-alternatives --install /usr/bin/lld lld /usr/bin/lld-6.0 100 \
     && update-alternatives --install /usr/bin/cc cc /usr/bin/clang 100 \
     && update-alternatives --install /usr/bin/c++ c++ /usr/bin/clang++ 100 \
