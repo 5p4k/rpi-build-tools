@@ -1,4 +1,7 @@
+ARG SYSROOT=/root/sysroot
+
 FROM debian AS builder-sysroot
+ARG SYSROOT
 COPY etc/cross-armv6-sources.list /root
 WORKDIR /root
 RUN apt-get -qq update \
@@ -25,5 +28,5 @@ RUN apt-get download \
         libstdc++6:armhf \
         linux-libc-dev:armhf
 RUN for PKG in *.deb; do \
-            dpkg-deb --extract "${PKG}" /root/sysroot; \
+            dpkg-deb --extract "${PKG}" "${SYSROOT}"; \
         done
