@@ -1,5 +1,5 @@
 #!/bin/bash
-LLVM_VERSION=70
+LLVM_VERSION=60
 LLVM_PROJECTS="compiler-rt libcxx libcxxabi libunwind"
 LLVM_TOOLS="clang lld"
 LLVM=1
