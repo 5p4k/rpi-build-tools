@@ -1,7 +1,7 @@
 #!/bin/bash
 
 DEFAULT_LLVM_VERSION="60"
-DEFAULT_TOOLCHAIN_FILE="/usr/share/RPiToolchain.cmake"
+DEFAULT_TOOLCHAIN_FILE="/usr/share/RPiToolchainBase.cmake"
 DEFAULT_BUILD_TYPE="MinSizeRel"
 DEFAULT_PREFIX="/root/sysroot/usr"
 
