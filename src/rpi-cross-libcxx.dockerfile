@@ -1,6 +1,6 @@
 ARG RPI_CROSS_IMAGE=git-registry.mittelab.org/5p4k/rpi-build-tools/rpi-cross
 ARG TOOLCHAIN_FILE=/usr/share/RPiToolchainBase.cmake
-ARG SYSROOT=/root/sysroot
+ARG SYSROOT=/usr/share/rpi-sysroot
 ARG LLVM_VERSION=60
 
 

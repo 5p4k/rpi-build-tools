@@ -22,7 +22,7 @@ DEFAULT_PACKAGE_LIST=(
     "libstdc++6"
     "linux-libc-dev"
 )
-SYSROOT="/root/sysroot"
+SYSROOT="/usr/share/rpi-sysroot"
 APPEND_DEFAULT_PACKAGES=1
 
 

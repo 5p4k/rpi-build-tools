@@ -1,5 +1,5 @@
 set(TARGET_TRIPLE             "arm-linux-gnueabihf")
-set(TARGET_SYSROOT            "/root/sysroot")
+set(TARGET_SYSROOT            "/usr/share/rpi-sysroot")
 set(TARGET_ARCH_FLAGS         "--target=${TARGET_TRIPLE} -march=armv6 -mfloat-abi=hard -mfpu=vfp")
 
 set(CMAKE_CROSSCOMPILING      "True")
