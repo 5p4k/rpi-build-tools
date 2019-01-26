@@ -1,4 +1,4 @@
-include(${CMAKE_CURRENT_LIST_DIR}/RPiLibCxxToolchain.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/RPiLibCxx.cmake)
 
 # Change the linking flags:
 #  -nostdlib++ will prevent linking against libc++.so

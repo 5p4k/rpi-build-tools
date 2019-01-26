@@ -1,4 +1,4 @@
-include(${CMAKE_CURRENT_LIST_DIR}/RPiToolchain.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/RPi.cmake)
 
 # Select the right standard library. Clang knows where to find it
 string(APPEND CMAKE_CXX_FLAGS_INIT " -stdlib=libc++")

@@ -17,7 +17,7 @@ COPY scripts/arch-check.sh /usr/bin/arch-check
 COPY scripts/check-sysroot.sh /usr/share/rpi-sysroot/check-armv6
 COPY scripts/cpp-armv6-linux-gnueabihf.sh /usr/bin/cpp-armv6-linux-gnueabihf
 COPY scripts/cc-armv6-linux-gnueabihf.sh /usr/bin/cc-armv6-linux-gnueabihf
-COPY cmake_toolchains/RPiToolchain.cmake /usr/share/
+COPY cmake_toolchains/RPi.cmake /usr/share/
 RUN chmod +x \
         /usr/bin/arch-check \
         /usr/share/rpi-sysroot/check-armv6 \
