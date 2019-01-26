@@ -92,6 +92,7 @@ echo-run cmake \
     -DCMAKE_INSTALL_PREFIX="${PREFIX}" \
     -DLIBCXX_CXX_ABI="libcxxabi" \
     -DLIBCXX_CXX_ABI_INCLUDE_PATHS="${SOURCE_FOLDER}/llvm/projects/libcxxabi/include" \
+    -DLIBCXX_CXX_ABI_LIBRARY_PATH="${PREFIX}/lib" \
     -Wno-dev \
     "${SOURCE_FOLDER}/llvm/projects/libcxx"
 echo-run make -j "$(nproc)"
