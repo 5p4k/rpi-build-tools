@@ -1,10 +1,7 @@
 include(${CMAKE_CURRENT_LIST_DIR}/RPiToolchain.cmake)
 
-set(ALL_LINKER_FLAGS "-lc++abi")
-
+# Select the right standard library. Clang knows where to find it
 string(APPEND CMAKE_CXX_FLAGS_INIT " -stdlib=libc++")
 
-set(CMAKE_EXE_LINKER_FLAGS_INIT     "${ALL_LINKER_FLAGS}")
-set(CMAKE_MODULE_LINKER_FLAGS_INIT  "${ALL_LINKER_FLAGS}")
-set(CMAKE_SHARED_LINKER_FLAGS_INIT  "${ALL_LINKER_FLAGS}")
-set(CMAKE_STATIC_LINKER_FLAGS_INIT  "${ALL_LINKER_FLAGS}")
+# One must also link agains libc++abi
+set(CMAKE_CXX_STANDARD_LIBRARIES "-lc++abi")
