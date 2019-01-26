@@ -23,7 +23,7 @@ build:rpi-cross-libcxx:
     - bash autobuild.sh
       --image-tag rpi-cross-libcxx
       --build-arg LLVM_VERSION=60
-      --build-arg TOOLCHAIN_FILE=/usr/share/RPiToolchainBase.cmake
+      --build-arg TOOLCHAIN_FILE=/usr/share/RPiToolchain.cmake
       --build-arg RPI_CROSS_IMAGE=$CI_REGISTRY/$CI_PROJECT_PATH/rpi-cross
       --build-arg SYSROOT=/usr/share/rpi-sysroot
       src/rpi-cross-libcxx.dockerfile
