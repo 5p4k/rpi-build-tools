@@ -9,7 +9,7 @@ ARG LLVM_VERSION
 ARG LLVM_PROJECTS
 ARG LLVM_TOOLS
 WORKDIR /root
-COPY fetch-llvm-src.sh ./
+COPY scripts/fetch-llvm-src.sh ./
 RUN apk add --no-cache --update \
         curl \
         file \
