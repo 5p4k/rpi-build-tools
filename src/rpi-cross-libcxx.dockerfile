@@ -14,5 +14,5 @@ RUN bash /root/cross-build-libcxx.sh --llvm-version "${LLVM_VERSION}" --toolchai
 FROM $RPI_CROSS_IMAGE
 ARG SYSROOT
 COPY --from=builder-libcxx /root/prefix "$SYSROOT/usr"
-COPY cmake_toolchains/RPiStaticLibCxxToolchain.cmake /usr/share/
+COPY cmake_toolchains/RPiLibCxxToolchain.cmake /usr/share/
 RUN "${SYSROOT}/check-armv6"
