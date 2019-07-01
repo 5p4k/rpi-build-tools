@@ -75,7 +75,7 @@ echo "Build command: ${BUILD_CMDLINE[*]}"
 
 echo "Logging in..."
 
-docker login -u gitlab-ci-token -p "${CI_JOB_TOKEN}" "${CI_REGISTRY}"
+docker login -u "${CI_REGISTRY_USER}" -p "${CI_REGISTRY_PASSWORD}" "${CI_REGISTRY}"
 
 echo "Building..."
 "${BUILD_CMDLINE[@]}"
