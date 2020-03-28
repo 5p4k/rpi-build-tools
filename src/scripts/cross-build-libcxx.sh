@@ -78,6 +78,7 @@ pushd "${BUILD_FOLDER}"
 
 # -Wno-dev suppresses weird warnings about the CMake files
 echo_run cmake \
+    -DCMAKE_SHARED_LINKER_FLAGS="-Wl,-z,notext" \
     -DCMAKE_TOOLCHAIN_FILE="${TOOLCHAIN_FILE}" \
     -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \
     -DCMAKE_INSTALL_PREFIX="${PREFIX}" \
@@ -89,6 +90,7 @@ echo_run make -j "$(nproc)"
 echo_run make install
 echo_run rm -rf ./*
 echo_run cmake \
+    -DCMAKE_SHARED_LINKER_FLAGS="-Wl,-z,notext" \
     -DCMAKE_TOOLCHAIN_FILE="${TOOLCHAIN_FILE}" \
     -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \
     -DCMAKE_INSTALL_PREFIX="${PREFIX}" \

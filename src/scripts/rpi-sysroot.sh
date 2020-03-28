@@ -21,6 +21,10 @@ DEFAULT_PACKAGE_LIST=(
     "libstdc++-8-dev"
     "libstdc++6"
     "linux-libc-dev"
+    "libc++-8-dev"
+    "libc++1-8"
+    "libc++abi-8-dev"
+    "libc++abi1-8"
 )
 SYSROOT="/usr/share/rpi-sysroot"
 APPEND_DEFAULT_PACKAGES=1
@@ -111,7 +115,7 @@ echo_run dpkg --add-architecture "${RASPBIAN_ARCH}"
 
 # Update, now only Raspbian packages are known to APT
 echo_run apt-get -qq update
-
+exit
 echo ">> Downloading all packages. Ignore errors about owner of the folder..."
 
 # Build the command line
