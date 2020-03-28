@@ -1,19 +1,11 @@
 RPi Build Tools
 ===
 
-**Official repo:** [https://git.mittelab.org/5p4k/rpi-build-tools][repo_url]  
+**Official repo:** [https://git.mittelab.org/5p4k/rpi-build-tools][repo_url]
 **Build status:** [![pipeline status][pipeline_svg]][pipeline]
 
-This is an attempt at providing more up-to-date build tools on the Raspberry Pi. At the moment of
-writing, compiling C++17 is absolutely off limits on the Raspberry Pi, as it requires to manually
-build (or to do quite some tweaking) a recent compiler. The tools I'd like to use are
-
-- CMake 3.12
-- Clang 7
-- Gcc 8
-
-These are at the moment the most recent versions, and if we need to build them from scratch, let's
-go big.
+This is an attempt at providing clang-based cross-compile build tools on the Raspberry Pi.
+When this project was first started, C++17 was off limits on the Raspberry Pi.
 
 Automated building via CI
 ===
@@ -37,9 +29,9 @@ get plenty of errors, at the first ARM binary that is run.
 standard_init_linux.go:190: exec user process caused "exec format error"
 ```
 
-So there you go, the `.gitlab-ci.yml` file is a working example; since the QEMU emulation makes
-building the ARM images really slow (hey but we are **actually** cross-building so no complaints
-here), we use [Gitlab's recipe][2] for caching in the Container Registry the images.
+So the `.gitlab-ci.yml` file is a working example; since the QEMU emulation makes
+building the ARM images really slow (hey but we are **actually** cross-building so can't complain),
+we use [Gitlab's recipe][2] for caching in the Container Registry the images.
 
 [repo_url]: https://git.mittelab.org/5p4k/rpi-build-tools
 [pipeline]: https://git.mittelab.org/5p4k/rpi-build-tools/commits/master
