@@ -1,17 +1,17 @@
 #!/bin/bash
-LLVM_VERSION=60
+LLVM_VERSION=90
 LLVM_PROJECTS="compiler-rt libcxx libcxxabi libunwind"
 LLVM_TOOLS="clang lld"
 LLVM=1
 TARGET="$(pwd)"
 
-function optional-run() {
+function optional_run() {
     if which "$1" > /dev/null; then
         "$@"
     fi
 }
 
-function ensure-or-install() {
+function ensure_or_install() {
     PROG="$1"
     shift
     if ! which "${PROG}" > /dev/null; then
@@ -70,9 +70,10 @@ done
 
 LLVM_PROJECTS_TOOLS="${LLVM_PROJECTS} ${LLVM_TOOLS}"
 
-ensure-or-install curl curl ca-certificates
-ensure-or-install unzip unzip
+ensure_or_install curl curl ca-certificates
+ensure_or_install unzip unzip
 
+mkdir -p "${TARGET}"
 cd "${TARGET}"
 
 if [[ ${LLVM} -ne 0 ]]; then
@@ -89,7 +90,7 @@ for PROJ_TOOL in ${LLVM_PROJECTS_TOOLS}; do
     export PROJ_TOOL_URL="https://github.com/llvm-mirror/${PROJ_TOOL}/archive/release_${LLVM_VERSION}.zip"
     echo "Pulling ${PROJ_TOOL} from ${PROJ_TOOL_URL}"
     curl -L -o "${PROJ_TOOL}.zip" "${PROJ_TOOL_URL}"
-    optional-run file "${PROJ_TOOL}.zip"
+    optional_run file "${PROJ_TOOL}.zip"
 done
 for PROJ_TOOL in ${LLVM_PROJECTS_TOOLS}; do
         unzip -q "${PROJ_TOOL}.zip"

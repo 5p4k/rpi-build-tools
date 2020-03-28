@@ -1,7 +1,9 @@
-ARG LLVM_VERSION=60
+ARG LLVM_VERSION=90
 ARG LLVM_TARGETS=ARM
 ARG LLVM_PROJECTS=""
 ARG LLVM_TOOLS="clang lld"
+ARG DEBIAN_IMAGE="debian:buster-slim"
+ARG REPO_VERSION=buster
 
 
 FROM alpine AS builder-sources
@@ -17,24 +19,24 @@ RUN apk add --no-cache --update \
 RUN ash fetch-llvm-src.sh --projects "${LLVM_PROJECTS}" --tools "${LLVM_TOOLS}" --version "${LLVM_VERSION}"
 
 
-FROM debian:stretch-backports AS builder-compiled
+FROM "$DEBIAN_IMAGE" AS builder-compiled
 ARG LLVM_TARGETS
 RUN apt-get -qq update \
-    && apt-get -t stretch-backports -qq install -yy --no-install-recommends \
+    && apt-get -t "${REPO_VERSION}" -qq install -yy --no-install-recommends \
         cmake \
         python \
         libc++-dev \
         libc++abi-dev \
-        libclang-common-6.0-dev \
+        libclang-common-7-dev \
         libc6-dev \
-        llvm-6.0 \
-        clang-6.0 \
-        lld-6.0 \
+        llvm-7 \
+        clang-7 \
+        lld-7 \
         make
 COPY --from=builder-sources /root/llvm /root/llvm
 WORKDIR /root/build
 RUN mkdir /root/prefix \
-    && LLVM_TOOLCHAIN_LIB_DIR=$(llvm-config-6.0 --libdir) \
+    && LLVM_TOOLCHAIN_LIB_DIR=$(llvm-config-7 --libdir) \
     && LD_FLAGS="" \
     && LD_FLAGS="${LD_FLAGS} -Wl,-L ${LLVM_TOOLCHAIN_LIB_DIR}" \
     && LD_FLAGS="${LD_FLAGS} -Wl,-rpath-link ${LLVM_TOOLCHAIN_LIB_DIR}" \
@@ -42,9 +44,9 @@ RUN mkdir /root/prefix \
     && CXX_FLAGS="-Wno-unused-command-line-argument" \
     && CXX_FLAGS="${CXX_FLAGS} -stdlib=libc++" \
     && cmake \
-        -DCMAKE_C_COMPILER=clang-6.0 \
-        -DCMAKE_CXX_COMPILER=clang++-6.0 \
-        -DCMAKE_ASM_COMPILER=clang-6.0 \
+        -DCMAKE_C_COMPILER=clang-7 \
+        -DCMAKE_CXX_COMPILER=clang++-7 \
+        -DCMAKE_ASM_COMPILER=clang-7 \
         -DLLVM_ENABLE_PIC=NO \
         -DLLVM_TARGETS_TO_BUILD="${LLVM_TARGETS}" \
         -DCMAKE_CXX_FLAGS="${CXX_FLAGS}" \
@@ -74,10 +76,10 @@ RUN echo "Compiling LLVM using $(nproc) parallel jobs." \
     && du -sh .
 
 
-FROM debian:stretch-backports
+FROM "$DEBIAN_IMAGE"
 COPY --from=builder-compiled /root/prefix /usr/local
 RUN apt-get -qq update \
-    && apt-get -t stretch-backports -qq install -yy --no-install-recommends \
+    && apt-get -t "${REPO_VERSION}" -qq install -yy --no-install-recommends \
         python \
         libc++1 \
         libc++abi1

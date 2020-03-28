@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DEFAULT_LLVM_VERSION="60"
+DEFAULT_LLVM_VERSION="90"
 DEFAULT_TOOLCHAIN_FILE="/usr/share/RPi.cmake"
 DEFAULT_BUILD_TYPE="MinSizeRel"
 DEFAULT_PREFIX="/usr/share/rpi-sysroot/usr"
@@ -13,6 +13,8 @@ PREFIX="${DEFAULT_PREFIX}"
 function usage() {
     echo "$0 [-v|--llvm-version <LLVM version>] [-b|--build-type <Build Type>] [-p|--install-prefix <Prefix>]"
     echo "$0 -h|--help"
+    echo ""
+    echo "Downloads and cross-compiles the specified version of libc++."
     echo ""
     echo "Default LLVM version:   ${DEFAULT_LLVM_VERSION}"
     echo "Default install prefix: ${DEFAULT_PREFIX}"
@@ -46,7 +48,7 @@ while [[ $# -gt 0 ]]; do
     shift
 done
 
-function echo-run() {
+function echo_run() {
     echo "$@"
     "$@"
 }
@@ -70,12 +72,12 @@ echo ">>   Install prefix:       ${PREFIX}"
 SOURCE_FOLDER="$(mktemp -d)"
 BUILD_FOLDER="$(mktemp -d)"
 
-echo-run "${FETCH_LLVM_SH}" --no-llvm --projects "libcxx libcxxabi" --tools "" --version "${LLVM_VERSION}" "${SOURCE_FOLDER}"
+echo_run "${FETCH_LLVM_SH}" --no-llvm --projects "libcxx libcxxabi" --tools "" --version "${LLVM_VERSION}" "${SOURCE_FOLDER}"
 
 pushd "${BUILD_FOLDER}"
 
 # -Wno-dev suppresses weird warnings about the CMake files
-echo-run cmake \
+echo_run cmake \
     -DCMAKE_TOOLCHAIN_FILE="${TOOLCHAIN_FILE}" \
     -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \
     -DCMAKE_INSTALL_PREFIX="${PREFIX}" \
@@ -83,10 +85,10 @@ echo-run cmake \
     -DLIBCXXABI_LIBCXX_INCLUDES="${SOURCE_FOLDER}/llvm/projects/libcxx/include" \
     -Wno-dev \
     "${SOURCE_FOLDER}/llvm/projects/libcxxabi"
-echo-run make -j "$(nproc)"
-echo-run make install
-echo-run rm -rf ./*
-echo-run cmake \
+echo_run make -j "$(nproc)"
+echo_run make install
+echo_run rm -rf ./*
+echo_run cmake \
     -DCMAKE_TOOLCHAIN_FILE="${TOOLCHAIN_FILE}" \
     -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \
     -DCMAKE_INSTALL_PREFIX="${PREFIX}" \
@@ -95,10 +97,10 @@ echo-run cmake \
     -DLIBCXX_CXX_ABI_LIBRARY_PATH="${PREFIX}/lib" \
     -Wno-dev \
     "${SOURCE_FOLDER}/llvm/projects/libcxx"
-echo-run make -j "$(nproc)"
-echo-run make install
-echo-run rm -rf ./*
+echo_run make -j "$(nproc)"
+echo_run make install
+echo_run rm -rf ./*
 popd
 
-echo-run rm -rf "${BUILD_FOLDER}"
-echo-run rm -rf "${SOURCE_FOLDER}"
+echo_run rm -rf "${BUILD_FOLDER}"
+echo_run rm -rf "${SOURCE_FOLDER}"

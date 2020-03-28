@@ -3,22 +3,22 @@
 SOURCES_LIST="/etc/apt/sources.list"
 RASPBIAN_ARCH="armhf"
 DOWNLOAD_FOLDER="$(mktemp -d)"
+RASPBIAN_VERSION="buster"
 
 
-RASPBIAN_SOURCES="deb http://archive.raspbian.org/raspbian stretch main contrib non-free rpi firmware"
 RASPBIAN_KEY="9165938D90FDDD2E"
 KEYSERVER="keyserver.ubuntu.com"
 PACKAGE_LIST=()
 DEFAULT_PACKAGE_LIST=(
-    "gcc-4.7-base"
+    "gcc-8-base"
     "libc-bin"
     "libc-dev-bin"
     "libc6-dev"
     "libc6"
-    "libgcc-4.7-dev"
+    "libgcc-8-dev"
     "libgcc1"
     "libgomp1"
-    "libstdc++6-4.7-dev"
+    "libstdc++-8-dev"
     "libstdc++6"
     "linux-libc-dev"
 )
@@ -26,18 +26,25 @@ SYSROOT="/usr/share/rpi-sysroot"
 APPEND_DEFAULT_PACKAGES=1
 
 
-function echo-run() {
+function echo_run() {
     echo "$@"
     "$@"
 }
 
 
 function usage() {
-    echo "$0 [-s|--sysroot <sysroot_folder>] [-n|--no-default-packages] [<packages> ...]"
+    echo "$0 [-s|--sysroot <sysroot_folder>] [-v|--version <raspbian_version>] \\"
+    echo "   [-n|--no-default-packages] [<packages> ...]"
+    echo ""
     echo "$0 -h|--help"
     echo ""
     echo "Default sysroot: ${SYSROOT}"
+    echo "Default Raspbian version: ${RASPBIAN_VERSION}"
     echo "Default pacakge list: ${DEFAULT_PACKAGE_LIST[*]}"
+    echo ""
+    echo "Downloads and unpacks the specified packages from the Raspbian armhf repository."
+    echo "This is used to create a basic sysroot to cross-compile for the Raspberry Pi,"
+    echo "starting directly from up-to-date packages."
 }
 
 
@@ -46,6 +53,10 @@ while [[ $# -gt 0 ]]; do
         -s|--sysroot)
             shift
             SYSROOT="$1"
+            ;;
+        -v|--version)
+            shift
+            RASPBIAN_VERSION="$1"
             ;;
         -n|--no-default-packages)
             APPEND_DEFAULT_PACKAGES=0
@@ -60,6 +71,8 @@ while [[ $# -gt 0 ]]; do
     esac
     shift
 done
+
+RASPBIAN_SOURCES="deb http://archive.raspbian.org/raspbian ${RASPBIAN_VERSION} main contrib non-free rpi firmware"
 
 if [[ ${APPEND_DEFAULT_PACKAGES} -ne 0 ]]; then
     PACKAGE_LIST+=("${DEFAULT_PACKAGE_LIST[@]}")
@@ -77,27 +90,27 @@ done
 
 echo ">> Updating apt..."
 
-echo-run apt-get -qq update
+echo_run apt-get -qq update
 
 echo ">> Installing gnupg2 and dirmngr..."
 
 # You need gnupg2 and dirmngr to import a key with apt-key
-echo-run apt-get install -qq -yy --no-install-recommends gnupg2 dirmngr
+echo_run apt-get install -qq -yy --no-install-recommends gnupg2 dirmngr
 
 echo ">> Importing Raspbian key..."
 
 # Import Raspberry Pi key
-echo-run apt-key adv --no-tty --keyserver "${KEYSERVER}" --recv-keys "${RASPBIAN_KEY}"
+echo_run apt-key adv --no-tty --keyserver "${KEYSERVER}" --recv-keys "${RASPBIAN_KEY}"
 
 echo ">> Updating apt for Raspbian packages..."
 
 # Patch the sources.list
 mv "${SOURCES_LIST}" "${SOURCES_LIST}.old"
 echo "${RASPBIAN_SOURCES}" > "${SOURCES_LIST}"
-echo-run dpkg --add-architecture "${RASPBIAN_ARCH}"
+echo_run dpkg --add-architecture "${RASPBIAN_ARCH}"
 
 # Update, now only Raspbian packages are known to APT
-echo-run apt-get -qq update
+echo_run apt-get -qq update
 
 echo ">> Downloading all packages. Ignore errors about owner of the folder..."
 
@@ -113,15 +126,15 @@ for PACKAGE in "${PACKAGE_LIST[@]}"; do
 done
 
 pushd "${DOWNLOAD_FOLDER}"
-echo-run "${CMD[@]}"
+echo_run "${CMD[@]}"
 popd
 
 echo ">> Restoring previous apt cache."
 
 # Restore the sources list
 mv "${SOURCES_LIST}.old" "${SOURCES_LIST}"
-echo-run dpkg --remove-architecture "${RASPBIAN_ARCH}"
-echo-run apt-get -qq update
+echo_run dpkg --remove-architecture "${RASPBIAN_ARCH}"
+echo_run apt-get -qq update
 
 echo ">> Listing all downloaded packages:"
 
@@ -132,7 +145,7 @@ echo ">> Extracting all packages to ${SYSROOT}..."
 [[ -d "${SYSROOT}" ]] || mkdir -p "${SYSROOT}"
 
 find "${DOWNLOAD_FOLDER}" -type f -name \*.deb | while read DEB; do
-    echo-run dpkg-deb --extract "${DEB}" "${SYSROOT}"
+    echo_run dpkg-deb --extract "${DEB}" "${SYSROOT}"
 done
 
 echo ">> Completed, removing package files."

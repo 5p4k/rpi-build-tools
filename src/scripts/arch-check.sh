@@ -2,6 +2,18 @@
 
 function usage() {
     echo "$0 [--ensure <ARCH> [--no-print-arch] [--no-print-matching]] [--] <FILES> ..."
+    echo ""
+    echo "Analyzes the architecture of the specified binary files."
+    echo ""
+    echo "  --ensure <ARCH>"
+    echo "  Checks that all the binaries match the architecture <ARCH>."
+    echo "  Returns 0 if that's the case, 1 otherwise."
+    echo ""
+    echo "  --no-print-arch"
+    echo "  Omits printing the architecture of the binaries that are not matching <ARCH>."
+    echo ""
+    echo "  --no-print-matching"
+    echo "  Omits printing the architecture of the binaries that are matching <ARCH>."
 }
 
 FILES=()
