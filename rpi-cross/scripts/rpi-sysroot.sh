@@ -8,26 +8,9 @@ RASPBIAN_VERSION="buster"
 
 RASPBIAN_KEY="9165938D90FDDD2E"
 KEYSERVER="keyserver.ubuntu.com"
-PACKAGE_LIST=()
-DEFAULT_PACKAGE_LIST=(
-    "gcc-8-base"
-    "libc-bin"
-    "libc-dev-bin"
-    "libc6-dev"
-    "libc6"
-    "libgcc-8-dev"
-    "libgcc1"
-    "libgomp1"
-    "libstdc++-8-dev"
-    "libstdc++6"
-    "linux-libc-dev"
-    "libc++-8-dev"
-    "libc++1-8"
-    "libc++abi-8-dev"
-    "libc++abi1-8"
-)
+EXTRA_PACKAGES=()
 SYSROOT="/usr/share/rpi-sysroot"
-APPEND_DEFAULT_PACKAGES=1
+PACKAGE_LIST_FILE=""
 
 
 function echo_run() {
@@ -38,13 +21,12 @@ function echo_run() {
 
 function usage() {
     echo "$0 [-s|--sysroot <sysroot_folder>] [-v|--version <raspbian_version>] \\"
-    echo "   [-n|--no-default-packages] [<packages> ...]"
+    echo "   [-p|--package-list <pkg_list_file>] [<other_packages> ...]"
     echo ""
     echo "$0 -h|--help"
     echo ""
     echo "Default sysroot: ${SYSROOT}"
     echo "Default Raspbian version: ${RASPBIAN_VERSION}"
-    echo "Default pacakge list: ${DEFAULT_PACKAGE_LIST[*]}"
     echo ""
     echo "Downloads and unpacks the specified packages from the Raspbian armhf repository."
     echo "This is used to create a basic sysroot to cross-compile for the Raspberry Pi,"
@@ -62,35 +44,62 @@ while [[ $# -gt 0 ]]; do
             shift
             RASPBIAN_VERSION="$1"
             ;;
-        -n|--no-default-packages)
-            APPEND_DEFAULT_PACKAGES=0
+        -p|--package-list)
+            shift
+            PACKAGE_LIST_FILE="$1"
             ;;
         -h|--help)
             usage
             exit
             ;;
         *)
-            PACKAGE_LIST+=("$1")
+            EXTRA_PACKAGES+=("$1")
             ;;
     esac
     shift
 done
 
-RASPBIAN_SOURCES="deb http://archive.raspbian.org/raspbian ${RASPBIAN_VERSION} main contrib non-free rpi firmware"
-
-if [[ ${APPEND_DEFAULT_PACKAGES} -ne 0 ]]; then
-    PACKAGE_LIST+=("${DEFAULT_PACKAGE_LIST[@]}")
+# Assemble a list of packages
+TEMP_PACKAGES_LIST_FILE="$(mktemp)"
+if [ -n "$PACKAGE_LIST_FILE" ]; then
+    if ! [ -f "$PACKAGE_LIST_FILE" ]; then
+        echo "Cannot find ${PACKAGE_LIST_FILE} at $(realpath "${PACKAGE_LIST_FILE}")."
+        exit 1
+    else
+        cat "$PACKAGE_LIST_FILE" >> "$TEMP_PACKAGES_LIST_FILE"
+    fi
 fi
+for PACKAGE in "${EXTRA_PACKAGES[@]}"; do
+    echo "$PACKAGE" >> "$TEMP_PACKAGES_LIST_FILE"
+done
+UNIQUE_PACKAGES_LIST_FILE="$(mktemp)"
+# Remove spaces, blank lines and sort unique
+tr -d '[:blank:]' < "$TEMP_PACKAGES_LIST_FILE" \
+    | sort --ignore-case --unique \
+    | sed -e '/^$/d' > "$UNIQUE_PACKAGES_LIST_FILE"
+rm "$TEMP_PACKAGES_LIST_FILE"
 
-# Make unique
-PACKAGE_LIST=($(tr ' ' '\n' <<< "${PACKAGE_LIST[@]}" | sort -u | tr '\n' ' '))
-
+# Print the list of packages, convert that to a bash array
 echo ">> The script will prepare a sysroot in ${SYSROOT} with the following packages:"
+
 I=0
-for PACKAGE in "${PACKAGE_LIST[@]}"; do
+UNIQUE_PACKAGES_LIST=()
+while read -r PACKAGE; do
     I=$(( I + 1 ))
     echo ">>  $(printf '%2d' "$I"). ${PACKAGE}"
-done
+    # Make sure there is only one :armhf at the end
+    if [[ "${PACKAGE}" == *:"${RASPBIAN_ARCH}" ]]; then
+        UNIQUE_PACKAGES_LIST+=("${PACKAGE}")
+    else
+        UNIQUE_PACKAGES_LIST+=("${PACKAGE}:${RASPBIAN_ARCH}")
+    fi
+done < "$UNIQUE_PACKAGES_LIST_FILE"
+
+rm "$UNIQUE_PACKAGES_LIST_FILE"
+
+# Actually prepare the new sources list
+
+RASPBIAN_SOURCES="deb http://archive.raspbian.org/raspbian ${RASPBIAN_VERSION} main contrib non-free rpi firmware"
 
 echo ">> Updating apt..."
 
@@ -115,23 +124,15 @@ echo_run dpkg --add-architecture "${RASPBIAN_ARCH}"
 
 # Update, now only Raspbian packages are known to APT
 echo_run apt-get -qq update
-exit
+
 echo ">> Downloading all packages. Ignore errors about owner of the folder..."
 
-# Build the command line
-CMD=("apt-get" "download" "-qq")
-for PACKAGE in "${PACKAGE_LIST[@]}"; do
-    # Make sure there is only one :armhf at the end
-    if [[ "${PACKAGE}" == *:"${RASPBIAN_ARCH}" ]]; then
-        CMD+=("${PACKAGE}")
-    else
-        CMD+=("${PACKAGE}:${RASPBIAN_ARCH}")
-    fi
-done
+# Build the command line and download
+CMD=("apt-get" "download" "-qq" "${UNIQUE_PACKAGES_LIST[@]}")
 
-pushd "${DOWNLOAD_FOLDER}"
+pushd "${DOWNLOAD_FOLDER}" || exit 2
 echo_run "${CMD[@]}"
-popd
+popd || exit 2
 
 echo ">> Restoring previous apt cache."
 
@@ -148,7 +149,7 @@ echo ">> Extracting all packages to ${SYSROOT}..."
 
 [[ -d "${SYSROOT}" ]] || mkdir -p "${SYSROOT}"
 
-find "${DOWNLOAD_FOLDER}" -type f -name \*.deb | while read DEB; do
+find "${DOWNLOAD_FOLDER}" -type f -name \*.deb | while read -r DEB; do
     echo_run dpkg-deb --extract "${DEB}" "${SYSROOT}"
 done
 

@@ -1,0 +1,15 @@
+gcc-8-base
+libc-bin
+libc-dev-bin
+libc6-dev
+libc6
+libgcc-8-dev
+libgcc1
+libgomp1
+libstdc++-8-dev
+libstdc++6
+linux-libc-dev
+libc++-8-dev
+libc++1-8
+libc++abi-8-dev
+libc++abi1-8

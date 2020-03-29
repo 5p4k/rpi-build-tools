@@ -21,7 +21,7 @@ ENSURE_ARCH=""
 PRINT_ARCH=1
 PRINT_MATCHING=1
 
-while [[ $# -gt 0 ]]; do
+while [ $# -gt 0 ]; do
     case "$1" in
         --ensure|-e)
             shift
@@ -34,7 +34,7 @@ while [[ $# -gt 0 ]]; do
             PRINT_MATCHING=0
             ;;
         *)
-            if [[ "$1" == "--" ]]; then
+            if [ "$1" == "--" ]; then
                 shift
                 break
             else
@@ -45,40 +45,46 @@ while [[ $# -gt 0 ]]; do
     shift
 done
 
-if [[ $# -gt 0 ]]; then
+if [ $# -gt 0 ]; then
     FILES+=("$@")
 fi
 
-if [[ ${#FILES[@]} -eq 0 ]]; then
+if [ ${#FILES[@]} -eq 0 ]; then
     usage
     exit
+fi
+
+if ! command -v file > /dev/null || ! command -v readelf > /dev/null; then
+    echo "Please install file and readelf, e.g. via"
+    echo "$ sudo apt install binutils"
+    exit 1
 fi
 
 ALL_ARCHS=$(file "${FILES[@]}" |
     grep '\(ELF\|ar archive\)' |
     cut -d: -f1 |
-    while read FILE; do
+    while read -r FILE; do
         readelf -A "${FILE}" |
-            fgrep 'Tag_CPU_arch:' |
+            grep -F 'Tag_CPU_arch:' |
             awk '{print $2}' |
-            while read ARCH; do
+            while read -r ARCH; do
                 echo "${FILE}: ${ARCH}"
             done
     done)
 
-if ! [[ -z "${ENSURE_ARCH}" ]]; then
+if [ -n "${ENSURE_ARCH}" ]; then
     MATCHING_ARCHS=$(echo "${ALL_ARCHS}" | grep ": ${ENSURE_ARCH}\$")
-    if [[ $PRINT_ARCH -ne 0 ]]; then
+    if [ $PRINT_ARCH -ne 0 ]; then
         echo "${ALL_ARCHS}" | sort -u
-    elif [[ $PRINT_MATCHING -ne 0 ]]; then
+    elif [ $PRINT_MATCHING -ne 0 ]; then
         echo "${MATCHING_ARCHS}" | sort -u
     fi
     N_TOTAL=$(echo "$ALL_ARCHS" | cut -d: -f1 | sort -u | wc -l)
     N_MATCHING=$(echo "$MATCHING_ARCHS" | cut -d: -f1 | sort -u | wc -l)
     N_MISMATCHING=$(( N_TOTAL - N_MATCHING ))
 
-    if [[ $N_MISMATCHING -eq 0 ]]; then
-        echo "All the ${N_TOTAL} binaries analyzes match the architecture ${ENSURE_ARCH}."
+    if [ $N_MISMATCHING -eq 0 ]; then
+        echo "All the ${N_TOTAL} binaries analyzed match the architecture ${ENSURE_ARCH}."
         exit 0
     else
         echo "There are ${N_MISMATCHING} out of ${N_TOTAL} binaries whose architecture does not match ${ENSURE_ARCH}."

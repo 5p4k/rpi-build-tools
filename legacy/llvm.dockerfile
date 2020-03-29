@@ -21,6 +21,7 @@ RUN ash fetch-llvm-src.sh --projects "${LLVM_PROJECTS}" --tools "${LLVM_TOOLS}" 
 
 FROM "$DEBIAN_IMAGE" AS builder-compiled
 ARG LLVM_TARGETS
+ARG REPO_VERSION
 RUN apt-get -qq update \
     && apt-get -t "${REPO_VERSION}" -qq install -yy --no-install-recommends \
         cmake \
@@ -77,6 +78,7 @@ RUN echo "Compiling LLVM using $(nproc) parallel jobs." \
 
 
 FROM "$DEBIAN_IMAGE"
+ARG REPO_VERSION
 COPY --from=builder-compiled /root/prefix /usr/local
 RUN apt-get -qq update \
     && apt-get -t "${REPO_VERSION}" -qq install -yy --no-install-recommends \

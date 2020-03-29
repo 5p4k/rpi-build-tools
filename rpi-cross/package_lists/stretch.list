@@ -1,0 +1,15 @@
+gcc-4.7-base
+libc-bin
+libc-dev-bin
+libc6-dev
+libc6
+libgcc-4.7-dev
+libgcc1
+libgomp1
+libstdc++6-4.7-dev
+libstdc++6
+linux-libc-dev
+libc++1
+libc++-dev
+libc++abi1
+libc++abi-dev
