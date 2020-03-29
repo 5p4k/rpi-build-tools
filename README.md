@@ -1,10 +1,10 @@
-RPi Build Tools
-===============
+RPi Build Tools (unofficial)
+============================
 
 **Official repo:** [https://git.mittelab.org/5p4k/rpi-build-tools][repo_url]  
 **Build status:** [![pipeline status][pipeline_svg]][pipeline]
 
-Helper scripts and Docker images to cross-compile for the Raspberry Pi (in `armv6`).
+Unofficial helper scripts and Docker images to cross-compile for the Raspberry Pi (in `armv6`).
 Binaries compiled with this image can be directly copied to the Raspberry Pi.
 
 Image usage
