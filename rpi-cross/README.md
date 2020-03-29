@@ -1,140 +1,81 @@
-Dockerfiles for Raspberry Pi cross-compiling
-============================================
+Raspberry Pi cross-compiling Docker image
+=========================================
 
-`rpi-cross.dockerfile`
-----------------------
 Debian-based docker image that contains a working toolchain and sysroot to cross-compile
 for the Raspberry Pi. This uses the default `clang` that comes with Debian (`buster-slim`,
 currently), and adds on top of it
 
- - a Raspberry Pi sysroot, which contains also `libc++`, at `/usr/share/rpi-sysroot`; this is generated with `src/scripts/rpi-sysroot.sh` in the current repo.
- - a toolchain for CMake `/usr/share/RPi.cmake` for cross-compiling; this comes from `src/cmake_toolchains/RPi.cmake`;
- - symlinks for `cpp-armv6-linux-gnueabihf` and `cc-armv6-linux-gnueabihf`, alternatives for `lld`, various build packages (`make`, `cmake`, `binutils`);
- - a couple of helper scripts, `arch-check` and `check-armv7` (which are `src/scripts/check-sysroot.sh` and `src/scripts/arch-check.sh` in the current repository) that help ensuring a binary is `armv6`.
- 
-This is ready to crosscompile.
+ - A Raspberry Pi sysroot, which contains also `libc++`, at `/usr/share/rpi-sysroot`.  
+   This is generated with `./scripts/rpi-sysroot.sh` in the current repo.
+ - A toolchain for CMake at `/usr/share/rpi-sysroot/RPi.cmake` for cross-compiling. See below.
+ - Symlinks for `cpp-armv6-linux-gnueabihf` and `cc-armv6-linux-gnueabihf`, alternatives for `lld`, various build packages (`make`, `cmake`, `binutils`).
+ - A couple of helper scripts, `arch-check` and `check-armv6` that help ensuring a binary is `armv6`. See below.
 
 Build options:
- - `DEBIAN_IMAGE="debian:buster-slim"`  
-   Debian image to use as a base for the final image.
- - `REPO_VERSION=buster`  
-   Version of the repository to use to pull down LLVM and clang for cross-compiling (in the final image).
+ - `RASPBIAN_VERSION=buster`  
+   Version of Raspbian to use as a basis for creating the sysroot.
+ - `HOST_IMAGE="debian:buster-slim"`  
+   Debian image to use as a base for the final image.  
+ - `HOST_REPO_VERSION=buster`  
+   Version of the repository to use to pull down LLVM and Clang for cross-compiling (in the host).
    This can be used for example to specify backports.
- - `RASPBIAN_VERSION=buster`
-   Version of Raspbian to use as a basis for creating the sysroot
 
-Scripts
--------
-In this subfolders there are scripts that can
+Build helper scripts: (`./scripts`)
+===================================
 
- - create a whole Raspberry Pi sysroot from scratch
- - download LLVM and related projects (clang, ld, libc++, ...)
- - cross-compile libc++ for RPi
- - check the architecture of a sysroot
+Sysroot builder (`rpi-sysroot.sh`)
+----------------------------------
 
-CMake toolchain: `./sysroot/RPi.cmake`
---------------------------------------
-Basic toolchain for cross-compiling. Assumes that a Raspberry Pi sysroot is present
-at `/usr/share/rpi-sysroot`, and sets the target triple to `arm-linux-gnueabihf`.
-This means that a valid C/C++ compiler for `arm-linux-gnueabihf` must be installed in
-the current system.  
-One such sysroot can be created using the `./scripts/rpi-sysroot.sh` script in the
-current repository.
-
-Raspberry build scripts
-=======================
-
-`rpi-sysroot.sh`
-----------------
-
-Creates a Raspbian Sysroot by downloading and unpacking the specified packages from the
-Raspbian repository. By default, only downloads packages essentials to build other software, plus extra
-`libc++`. Here's the current list of packages bundled in the sysroot:
-
- - `gcc-8-base`
- - `libc-bin`
- - `libc-dev-bin`
- - `libc6-dev`
- - `libc6`
- - `libgcc-8-dev`
- - `libgcc1`
- - `libgomp1`
- - `libstdc++-8-dev`
- - `libstdc++6`
- - `linux-libc-dev`
- - `libc++-8-dev`
- - `libc++1-8`
- - `libc++abi-8-dev`
- - `libc++abi1-8`
+Creates a Raspbian sysroot by downloading and unpacking the specified packages from the
+Raspbian repository.
 
 Usage example:
 ```
-# ./rpi-sysroot.sh --sysroot /usr/share/rpi-sysroot --version buster
+# ./rpi-sysroot.sh --sysroot /usr/share/rpi-sysroot --version buster --package-list package_lists/buster.list
 >> The script will prepare a sysroot in /usr/share/rpi-sysroot with the following packages:
->>   1. gcc-8-base
->>   2. libc-bin
->>   3. libc-dev-bin
->>   4. libc6
->>   5. libc6-dev
->>   6. libgcc-8-dev
->>   7. libgcc1
->>   8. libgomp1
->>   9. libstdc++-8-dev
->>  10. libstdc++6
->>  11. linux-libc-dev
+>>   1. gcc-4.7-base
+[...]
+>>  15. linux-libc-dev
 >> Updating apt...
 apt-get -qq update
 >> Installing gnupg2 and dirmngr...
 apt-get install -qq -yy --no-install-recommends gnupg2 dirmngr
+debconf: delaying package configuration, since apt-utils is not installed
+Selecting previously unselected package readline-common.
+(Reading database ... 6457 files and directories currently installed.)
 [...]
 >> Importing Raspbian key...
 apt-key adv --no-tty --keyserver keyserver.ubuntu.com --recv-keys 9165938D90FDDD2E
-Executing: /tmp/apt-key-gpghome.inzrPJ2WfO/gpg.1.sh --no-tty --keyserver keyserver.ubuntu.com --recv-keys 9165938D90FDDD2E
-gpg: key 9165938D90FDDD2E: public key "Mike Thompson (Raspberry Pi Debian armhf ARMv6+VFP) <mpthompson@gmail.com>" imported
+Warning: apt-key output should not be parsed (stdout is not a terminal)
+Executing: /tmp/apt-key-gpghome.q411doaq67/gpg.1.sh --no-tty --keyserver keyserver.ubuntu.com --recv-keys 9165938D90FDDD2E
+gpg: key 9165938D90FDDD2E: public key "[...]" imported
 gpg: Total number processed: 1
 gpg:               imported: 1
 >> Updating apt for Raspbian packages...
 dpkg --add-architecture armhf
 apt-get -qq update
 >> Downloading all packages. Ignore errors about owner of the folder...
-/tmp/tmp.ZQcoDReQeq /mnt/src/scripts
-apt-get download -qq gcc-8-base:armhf libc-bin:armhf libc-dev-bin:armhf libc6:armhf libc6-dev:armhf libgcc-8-dev:armhf libgcc1:armhf libgomp1:armhf libstdc++-8-dev:armhf libstdc++6:armhf linux-libc-dev:armhf
-W: Download is performed unsandboxed as root as file '/tmp/tmp.ZQcoDReQeq/gcc-8-base_8.3.0-6+rpi1_armhf.deb' couldn't be accessed by user '_apt'. - pkgAcquire::Run (13: Permission denied)
-/mnt/src/scripts
+/tmp/tmp.Jf3d7H4qhc /
+apt-get download -qq gcc-4.7-base:armhf libc++-dev:armhf libc++1:armhf libc++abi-dev:armhf libc++abi1:armhf libc-bin:armhf libc-dev-bin:armhf libc6:armhf libc6-dev:armhf libgcc-4.7-dev:armhf libgcc1:armhf libgomp1:armhf libstdc++6:armhf libstdc++6-4.7-dev:armhf linux-libc-dev:armhf
+W: Download is performed unsandboxed as root as file '/tmp/tmp.Jf3d7H4qhc/gcc-4.7-base_4.7.3-11+rpi1_armhf.deb' couldn't be accessed by user '_apt'. - pkgAcquire::Run (13: Permission denied)
+/
 >> Restoring previous apt cache.
 dpkg --remove-architecture armhf
 apt-get -qq update
 >> Listing all downloaded packages:
-/tmp/tmp.ZQcoDReQeq/libgomp1_8.3.0-6+rpi1_armhf.deb
-/tmp/tmp.ZQcoDReQeq/libstdc++6_8.3.0-6+rpi1_armhf.deb
-/tmp/tmp.ZQcoDReQeq/libc6_2.28-10+rpi1_armhf.deb
-/tmp/tmp.ZQcoDReQeq/libgcc-8-dev_8.3.0-6+rpi1_armhf.deb
-/tmp/tmp.ZQcoDReQeq/libgcc1_1%3a8.3.0-6+rpi1_armhf.deb
-/tmp/tmp.ZQcoDReQeq/gcc-8-base_8.3.0-6+rpi1_armhf.deb
-/tmp/tmp.ZQcoDReQeq/libc6-dev_2.28-10+rpi1_armhf.deb
-/tmp/tmp.ZQcoDReQeq/libstdc++-8-dev_8.3.0-6+rpi1_armhf.deb
-/tmp/tmp.ZQcoDReQeq/libc-dev-bin_2.28-10+rpi1_armhf.deb
-/tmp/tmp.ZQcoDReQeq/linux-libc-dev_4.18.20-2+rpi1_armhf.deb
-/tmp/tmp.ZQcoDReQeq/libc-bin_2.28-10+rpi1_armhf.deb
+/tmp/tmp.Jf3d7H4qhc/libc++-dev_3.5-2_armhf.deb
+[...]
+/tmp/tmp.Jf3d7H4qhc/libc6_2.24-11+deb9u4_armhf.deb
 >> Extracting all packages to /usr/share/rpi-sysroot...
-dpkg-deb --extract /tmp/tmp.ZQcoDReQeq/libgomp1_8.3.0-6+rpi1_armhf.deb /usr/share/rpi-sysroot
-dpkg-deb --extract /tmp/tmp.ZQcoDReQeq/libstdc++6_8.3.0-6+rpi1_armhf.deb /usr/share/rpi-sysroot
-dpkg-deb --extract /tmp/tmp.ZQcoDReQeq/libc6_2.28-10+rpi1_armhf.deb /usr/share/rpi-sysroot
-dpkg-deb --extract /tmp/tmp.ZQcoDReQeq/libgcc-8-dev_8.3.0-6+rpi1_armhf.deb /usr/share/rpi-sysroot
-dpkg-deb --extract /tmp/tmp.ZQcoDReQeq/libgcc1_1%3a8.3.0-6+rpi1_armhf.deb /usr/share/rpi-sysroot
-dpkg-deb --extract /tmp/tmp.ZQcoDReQeq/gcc-8-base_8.3.0-6+rpi1_armhf.deb /usr/share/rpi-sysroot
-dpkg-deb --extract /tmp/tmp.ZQcoDReQeq/libc6-dev_2.28-10+rpi1_armhf.deb /usr/share/rpi-sysroot
-dpkg-deb --extract /tmp/tmp.ZQcoDReQeq/libstdc++-8-dev_8.3.0-6+rpi1_armhf.deb /usr/share/rpi-sysroot
-dpkg-deb --extract /tmp/tmp.ZQcoDReQeq/libc-dev-bin_2.28-10+rpi1_armhf.deb /usr/share/rpi-sysroot
-dpkg-deb --extract /tmp/tmp.ZQcoDReQeq/linux-libc-dev_4.18.20-2+rpi1_armhf.deb /usr/share/rpi-sysroot
-dpkg-deb --extract /tmp/tmp.ZQcoDReQeq/libc-bin_2.28-10+rpi1_armhf.deb /usr/share/rpi-sysroot
+dpkg-deb --extract /tmp/tmp.Jf3d7H4qhc/libc++-dev_3.5-2_armhf.deb /usr/share/rpi-sysroot
+[...]
+dpkg-deb --extract /tmp/tmp.Jf3d7H4qhc/libc6_2.24-11+deb9u4_armhf.deb /usr/share/rpi-sysroot
 >> Completed, removing package files.
 ```
 
-`arch-check.sh`
----------------
-Requires `file` and `readelf` to be installed (`apt install file binutils`).
-Analyzed the architecture of the specified binaries, optionally ensures that all
+ELF architecture check (`arch-check.sh`)
+----------------------------------------
+Analyzes the architecture of the specified binaries, optionally ensures that all
 match a given architecture. This can be used to make sure that compiled binaries
 are correctly on `armv6`.
 
@@ -154,19 +95,33 @@ Usage example:
 All the 10 binaries analyzes match the architecture v6.
 ```
 
-`check-sysroot.sh`
-------------------
-Wrapper for `arch-check.sh` that analyzes a whole folder. Can be used to check that
-the whole sysroot is completely `armv6`-clean.
+Bundled scripts/toolchains
+==========================
+
+General purpose binaries (`./bin`)
+----------------------------------
+These are bundled into the final image and available in `/usr/bin`.
+
+  - `arch-check`: symlink to `./scripts/arch-check.sh`.  
+  - `cc-armv6-linux-gnueabihf`: just calls `cc` with the correct Raspberry Pi compile flags:  
+    `-march=armv6 -mfloat-abi=hard -mfpu=vfp`
+  - `cpp-armv6-linux-gnueabihf`: as above, but calls `cpp`.
+
+CMake toolchain (`./sysroot/RPi.cmake`)
+--------------------------------------
+Basic toolchain for cross-compiling. Assumes that a Raspberry Pi sysroot is present
+at `/usr/share/rpi-sysroot`, and sets the target triple to `arm-linux-gnueabihf`.
+This means that a valid C/C++ compiler for `arm-linux-gnueabihf` must be installed in
+the current system (e.g. `cc-` and `cpp-armv6-linux-gnueabihf` wrappers above).  
+
+Sysroot compliance checker (`./sysroot/check-armv6`)
+----------------------------------------------------
+Wrapper for `./scripts/arch-check.sh` that analyzes a whole folder.
+Called with no arguments will check that the wholesysroot is completely `armv6`-clean.
 
 Usage example:
 ```
-# ./check-sysroot.sh /usr/share/rpi-sysroot/
+# check-armv6
 All the 24 binaries analyzes match the architecture v6.
 All the 308 binaries analyzes match the architecture v6.
 ```
-
-`cc|cpp-armv6-linux-gnueabihf.sh`
----------------------------------
-One-line wrappers for `cc` and `c++` which add the following options:
-`--target=arm-linux-gnueabihf -march=armv6 -mfloat-abi=hard -mfpu=vfp --sysroot /usr/share/rpi-sysroot`

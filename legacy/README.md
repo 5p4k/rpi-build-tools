@@ -22,7 +22,7 @@ Build options:
    this essentially point to a container registry that contains the image `rpi-cross`.
  - `TOOLCHAIN_FILE=/usr/share/RPi.cmake`  
    this is just `src/cmake_toolchains/RPi.cmake` in the current repo.
- - `SYSROOT=/usr/share/rpi-sysroot`
+ - `SYSROOT=/usr/share/rpi-sysroot`  
    the sysroot extracted with `src/scripts/rpi-sysroot.sh`
  - `LLVM_VERSION=90`
 
@@ -42,10 +42,10 @@ Although one can build the whole LLVM toolchain, this image builds only
 moment [cannot be used on ARMv6](https://bugs.llvm.org/show_bug.cgi?id=39906).
 
 The build options:
- - `LLVM_VERSION = 90`
- - `LLVM_TARGETS = ARM`
- - `LLVM_PROJECTS = ""`
- - `LLVM_TOOLS = "clang lld"`
+ - `LLVM_VERSION=90`
+ - `LLVM_TARGETS=ARM`
+ - `LLVM_PROJECTS=""`
+ - `LLVM_TOOLS="clang lld"`
  - `DEBIAN_IMAGE=debian:buster-slim`
  - `REPO_VERSION=buster`
 
