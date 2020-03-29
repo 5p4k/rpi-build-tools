@@ -4,6 +4,8 @@ stages:
 
 .build-definition: &build-template
   image: docker:stable
+  tags:
+    - docker
   stage: build
   before_script:
    - apk add --no-cache --update bash
@@ -15,6 +17,8 @@ stages:
 
 .push-definition: &push-template
   image: docker:stable
+  tags:
+    - docker
   stage: push
   script:
     - export CONTAINER_IMAGE="${CI_REGISTRY}/${CI_PROJECT_PATH}/${CONTAINER_SOURCE_IMAGE_TAG}"
