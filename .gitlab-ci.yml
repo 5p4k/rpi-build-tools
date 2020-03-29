@@ -7,9 +7,9 @@ stages:
   before_script:
    - apk add --no-cache --update bash
   script:
-    - bash autobuild.sh \
-      --image-tag "rpi-cross-${RASPBIAN_VERSION}" \
-      --build-arg RASPBIAN_VERSION="${RASPBIAN_VERSION}" \
+    - bash autobuild.sh
+      --image-tag "rpi-cross-${RASPBIAN_VERSION}"
+      --build-arg RASPBIAN_VERSION="${RASPBIAN_VERSION}"
       ./rpi-cross/Dockerfile
 
 build:stretch:
