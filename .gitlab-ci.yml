@@ -27,8 +27,8 @@ stages:
     - docker pull "${CONTAINER_IMAGE}"
     - docker logout
     - docker login -u "${HUB_USER}" -p "${HUB_ACCESS_TOKEN}"
-    - docker tag "${CONTAINER_IMAGE}" "${HUB_DEST_IMAGE_TAG}"
-    - docker push "${HUB_DEST_IMAGE_TAG}"
+    - docker tag "${CONTAINER_IMAGE}" "${HUB_IMAGE}"
+    - docker push "${HUB_IMAGE}"
     - docker logout
 
 build:stretch:
