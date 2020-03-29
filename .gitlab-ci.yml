@@ -1,5 +1,6 @@
 stages:
   - build
+  - push
 
 .build-definition: &build-template
   image: docker:stable
@@ -12,6 +13,20 @@ stages:
       --build-arg RASPBIAN_VERSION="${RASPBIAN_VERSION}"
       ./rpi-cross/Dockerfile
 
+.push-definition: &push-template
+  image: docker:stable
+  stage: push
+  script:
+    - export CONTAINER_IMAGE="${CI_REGISTRY}/${CI_PROJECT_PATH}/${CONTAINER_SOURCE_IMAGE_TAG}"
+    - export HUB_IMAGE="${HUB_USER}/${HUB_DEST_IMAGE_TAG}"
+    - docker login -u "${CI_REGISTRY_USER}" -p "${CI_REGISTRY_PASSWORD}" "${CI_REGISTRY}"
+    - docker pull "${CONTAINER_IMAGE}"
+    - docker logout
+    - docker login -u "${HUB_USER}" -p "${HUB_ACCESS_TOKEN}"
+    - docker tag "${CONTAINER_IMAGE}" "${HUB_DEST_IMAGE_TAG}"
+    - docker push "${HUB_DEST_IMAGE_TAG}"
+    - docker logout
+
 build:stretch:
   <<: *build-template
   variables:
@@ -21,3 +36,21 @@ build:buster:
   <<: *build-template
   variables:
     RASPBIAN_VERSION: buster
+
+push:stretch:
+  <<: *push-template
+  variables:
+    CONTAINER_SOURCE_IMAGE_TAG: rpi-cross-stretch:latest
+    HUB_DEST_IMAGE_TAG: rpi-cross:stretch
+
+push:buster:
+  <<: *push-template
+  variables:
+    CONTAINER_SOURCE_IMAGE_TAG: rpi-cross-buster:latest
+    HUB_DEST_IMAGE_TAG: rpi-cross:buster
+
+push:latest:
+  <<: *push-template
+  variables:
+    CONTAINER_SOURCE_IMAGE_TAG: rpi-cross-buster:latest
+    HUB_DEST_IMAGE_TAG: rpi-cross:latest
