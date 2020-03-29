@@ -1,40 +1,23 @@
 stages:
   - build
-  - unbundle
 
-
-build:rpi-cross:
+.build-definition: &build-template
   image: docker:stable
   stage: build
   before_script:
    - apk add --no-cache --update bash
   script:
-    - bash autobuild.sh
-      --image-tag rpi-cross
-      src/rpi-cross.dockerfile
+    - bash autobuild.sh \
+      --image-tag "rpi-cross-${RASPBIAN_VERSION}" \
+      --build-arg RASPBIAN_VERSION="${RASPBIAN_VERSION}" \
+      ./rpi-cross
 
+build:stretch:
+  <<: *build-template
+  variables:
+    RASPBIAN_VERSION: stretch
 
-build:rpi-cross-libcxx:
-  image: docker:stable
-  stage: build
-  before_script:
-   - apk add --no-cache --update bash
-  script:
-    - bash autobuild.sh
-      --image-tag rpi-cross-libcxx
-      --build-arg LLVM_VERSION=60
-      --build-arg TOOLCHAIN_FILE=/usr/share/RPi.cmake
-      --build-arg RPI_CROSS_IMAGE=$CI_REGISTRY/$CI_PROJECT_PATH/rpi-cross
-      --build-arg SYSROOT=/usr/share/rpi-sysroot
-      src/rpi-cross-libcxx.dockerfile
-
-
-unbundle:rpi-sysroot:
-  stage: unbundle
-  image: $CI_REGISTRY/$CI_PROJECT_PATH/rpi-cross-libcxx
-  script:
-    - mv /usr/share/rpi-sysroot rpi-sysroot
-    - du -sh rpi-sysroot
-  artifacts:
-    paths:
-      - rpi-sysroot
+build:buster:
+  <<: *build-template
+  variables:
+    RASPBIAN_VERSION: buster
