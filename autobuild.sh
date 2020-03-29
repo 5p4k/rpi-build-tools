@@ -1,9 +1,9 @@
 #!/bin/bash
 
-if [[ -z "${CI_REGISTRY}" ]] \
-    || [[ -z "${CI_PROJECT_PATH}" ]] \
-    || [[ -z "${CI_COMMIT_SHA}" ]] \
-    || [[ -z "${CI_JOB_TOKEN}" ]]; then
+if [ -z "${CI_REGISTRY}" ] \
+    || [ -z "${CI_PROJECT_PATH}" ] \
+    || [ -z "${CI_COMMIT_SHA}" ] \
+    || [ -z "${CI_JOB_TOKEN}" ]; then
 
     echo "You are not running inside Gitlab CI."
     echo "This script requires the following variables to be set:"
@@ -22,7 +22,7 @@ IMAGE_TAG=""
 BUILD_ARGS=()
 DOCKERFILE=""
 
-while [[ $# -gt 0 ]]; do
+while [ $# -gt 0 ]; do
     case "$1" in
         -a|--build-arg)
             shift
@@ -39,12 +39,12 @@ while [[ $# -gt 0 ]]; do
     shift
 done
 
-if [[ -z "${IMAGE_TAG}" ]] || [[ -z "${DOCKERFILE}" ]]; then
+if [ -z "${IMAGE_TAG}" ] || [ -z "${DOCKERFILE}" ]; then
     usage
     exit 0
 fi
 
-if ! [[ -f "${DOCKERFILE}" ]]; then
+if ! [ -f "${DOCKERFILE}" ]; then
     echo "File ${DOCKERFILE} does not exist."
     exit 1
 fi
@@ -65,7 +65,7 @@ for ARG in "${BUILD_ARGS[@]}"; do
 done
 
 
-# BUILD_CMDLINE+=("--cache-from" "${CONTAINER_IMAGE}:latest")
+BUILD_CMDLINE+=("--cache-from" "${CONTAINER_IMAGE}:latest")
 BUILD_CMDLINE+=("--file" "${DOCKERFILE}")
 BUILD_CMDLINE+=("--tag" "${CONTAINER_IMAGE}:${CI_COMMIT_SHA}")
 BUILD_CMDLINE+=("--tag" "${CONTAINER_IMAGE}:latest")
@@ -82,7 +82,7 @@ echo "Building..."
 
 RES=$?
 
-if [[ ${RES} -ne 0 ]]; then
+if [ ${RES} -ne 0 ]; then
     exit ${RES}
 fi
 
