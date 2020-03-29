@@ -2,8 +2,13 @@ Raspberry Pi cross-compiling Docker image
 =========================================
 
 Debian-based docker image that contains a working toolchain and sysroot to cross-compile
-for the Raspberry Pi. This uses the default `clang` that comes with Debian (`buster-slim`,
-currently), and adds on top of it
+for the Raspberry Pi.
+
+**Note:** this image correctly builds for `armv6`, which is Raspbian's architecture.
+Although this appears in Raspbian's package repositories as `armhf`, it actually differs from the `armhf`
+from Debian's package repositories.
+
+This image uses the default `clang` that comes with Debian (`buster-slim`, currently), and adds on top of it:
 
  - A Raspberry Pi sysroot, which contains also `libc++`, at `/usr/share/rpi-sysroot`.  
    This is generated with `./scripts/rpi-sysroot.sh` in the current repo.
@@ -19,6 +24,28 @@ Build options:
  - `HOST_REPO_VERSION=buster`  
    Version of the repository to use to pull down LLVM and Clang for cross-compiling (in the host).
    This can be used for example to specify backports.
+
+How to use
+----------
+When running inside the generated image, it suffices to import the CMake toolchain:
+
+```
+$ mkdir build_folder
+$ cd build_folder
+$ cmake -DCMAKE_TOOLCHAIN_FILE=/usr/share/rpi-sysroot/RPi.cmake path/to/my_project
+$ make
+```
+
+When compiling sources directly, the provided wrappers can be used
+
+```
+$ cpp-armv6-linux-gnueabihf my_source_file.cpp
+ld: warning: lld uses extended branch encoding, no object with architecture supporting feature detected.
+ld: warning: lld may use movt/movw, no object with architecture supporting feature detected.
+$ ./a.out   # Will fail because can only run on a Raspberry Pi
+/lib/ld-linux-armhf.so.3: No such file or directory  
+```
+
 
 Build helper scripts: (`./scripts`)
 ===================================
