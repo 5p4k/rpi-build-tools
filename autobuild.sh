@@ -16,6 +16,10 @@ fi
 
 function usage() {
     echo "$0 [--build-arg KEY=VAL [...]] --image-tag IMAGE_TAG DOCKERFILE"
+    echo ""
+    echo "Will build DOCKERFILE and tag it with"
+    echo "  - CI_REGISTRY/CI_PROJECT_PATH/IMAGE_TAG:CI_COMMIT_SHA"
+    echo "  - CI_REGISTRY/CI_PROJECT_PATH/IMAGE_TAG:latest"
 }
 
 IMAGE_TAG=""
