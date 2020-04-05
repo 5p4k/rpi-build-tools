@@ -11,7 +11,29 @@ KEYSERVER="keyserver.ubuntu.com"
 EXTRA_PACKAGES=()
 SYSROOT="/usr/share/rpi-sysroot"
 PACKAGE_LIST_FILE=""
+DELETE_UNNEEDED=0
 
+
+NEEDED_FILES_TYPES_RGX=(
+    'ASCII text'            # Configuration and CMake files
+    'C\(++\)\? source'      # Of course
+    'Perl script'           # Well
+    'UTF-8 Unicode text'    # Sometimes it's not just ASCII
+    'very short file'       # __init__.py
+    'empty'                 # Ditto
+    'ar archive'            # Actual binaries
+    'ELF.*\(shared object\|pie executable\|relocatable\)'
+)
+
+# Build the allowed file regex
+GREP_NEEDED_RGX='\b\('
+for I in "${!NEEDED_FILES_TYPES_RGX[@]}"; do
+    if [ "$I" -gt 0 ]; then
+        GREP_NEEDED_RGX+='\|'
+    fi
+    GREP_NEEDED_RGX+="${NEEDED_FILES_TYPES_RGX[$I]}"
+done
+GREP_NEEDED_RGX+='\)\b'
 
 function echo_run() {
     echo "$@"
@@ -21,6 +43,7 @@ function echo_run() {
 
 function usage() {
     echo "$0 [-s|--sysroot <sysroot_folder>] [-v|--version <raspbian_version>] \\"
+    echo "   [-d|--delete-unneeded] \\"
     echo "   [-p|--package-list <pkg_list_file>] [<other_packages> ...]"
     echo ""
     echo "$0 -h|--help"
@@ -34,7 +57,7 @@ function usage() {
 }
 
 
-while [[ $# -gt 0 ]]; do
+while [ $# -gt 0 ]; do
     case "$1" in
         -s|--sysroot)
             shift
@@ -47,6 +70,9 @@ while [[ $# -gt 0 ]]; do
         -p|--package-list)
             shift
             PACKAGE_LIST_FILE="$1"
+            ;;
+        -d|--delete-unneeded)
+            DELETE_UNNEEDED=1
             ;;
         -h|--help)
             usage
@@ -147,7 +173,7 @@ find "${DOWNLOAD_FOLDER}" -type f -name \*.deb
 
 echo ">> Extracting all packages to ${SYSROOT}..."
 
-[[ -d "${SYSROOT}" ]] || mkdir -p "${SYSROOT}"
+[ -d "${SYSROOT}" ] || mkdir -p "${SYSROOT}"
 
 find "${DOWNLOAD_FOLDER}" -type f -name \*.deb | while read -r DEB; do
     echo_run dpkg-deb --extract "${DEB}" "${SYSROOT}"
@@ -156,3 +182,15 @@ done
 echo ">> Completed, removing package files."
 
 rm -rf "${DOWNLOAD_FOLDER}"
+
+if [ $DELETE_UNNEEDED -ne 0 ]; then
+    echo ">> Finding files that are not needed for cross-compiling..."
+
+    find "${SYSROOT}" -type f | while read -r FILE; do
+        if ! file "${FILE}" | grep -q "$GREP_NEEDED_RGX"; then
+            echo "$FILE"
+        fi
+    done | xargs rm
+
+    echo ">> Done."
+fi
