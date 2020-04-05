@@ -54,22 +54,38 @@ if [ ${#FILES[@]} -eq 0 ]; then
     exit
 fi
 
-if ! command -v file > /dev/null || ! command -v readelf > /dev/null; then
-    echo "Please install file and readelf, e.g. via"
+function gnu-readelf-arch() {
+    readelf -A "$1" | grep -F 'Tag_CPU_arch:' | head -n1 | awk '{print $2}'
+}
+
+function llvm-readelf-arch() {
+    llvm-readelf --arm-attributes "$1" | grep -F "Description: ARM" | head -n1 | awk '{print $3}'
+}
+
+# Determine which readelf to use
+if command -v readelf > /dev/null; then
+    READELF=gnu-readelf-arch
+elif command -v llvm-readelf > /dev/null; then
+    READELF=llvm-readelf-arch
+else
+    echo "Please install readelf, e.g. via"
+    echo "$ sudo apt install llvm-dev # or"
     echo "$ sudo apt install binutils"
     exit 1
 fi
+
+if ! command -v file > /dev/null; then
+    echo "Please install file, e.g. via"
+    echo "$ sudo apt install file"
+    exit 1
+fi
+
 
 ALL_ARCHS=$(file "${FILES[@]}" |
     grep '\(ELF\|ar archive\)' |
     cut -d: -f1 |
     while read -r FILE; do
-        readelf -A "${FILE}" |
-            grep -F 'Tag_CPU_arch:' |
-            awk '{print $2}' |
-            while read -r ARCH; do
-                echo "${FILE}: ${ARCH}"
-            done
+        echo "${FILE}: $(${READELF} "${FILE}")"
     done)
 
 if [ -n "${ENSURE_ARCH}" ]; then

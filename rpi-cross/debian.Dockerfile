@@ -18,7 +18,6 @@ ARG RASPBIAN_VERSION
 RUN apt-get -qq update \
     && apt-get install -t "${HOST_REPO_VERSION}" -yy --no-install-recommends \
         file \
-        binutils \
         clang-7 \
         lld-7 \
         make \
