@@ -35,4 +35,5 @@ RUN    update-alternatives --install /usr/bin/clang clang /usr/bin/clang-7 100 \
     && update-alternatives --install /usr/bin/c++ c++ /usr/bin/clang++ 100 \
     && update-alternatives --install /usr/bin/cpp cpp /usr/bin/clang++ 100 \
     && update-alternatives --install /usr/bin/ld ld /usr/bin/lld 100 \
+    && find /usr/share/rpi-sysroot -maxdepth 1 -name \*.cmake -exec ln -s {} /usr/share/ \; \
     && /usr/share/rpi-sysroot/check-armv6
