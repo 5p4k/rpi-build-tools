@@ -1,5 +1,6 @@
 stages:
   - build
+  - release
   - push
 
 .build-definition: &build-template
@@ -11,15 +12,18 @@ stages:
    - apk add --no-cache --update bash
   script:
     - bash autobuild.sh
-      --image-tag "rpi-cross-${RASPBIAN_VERSION}"
+      --image-tag "rpi-cross-${RASPBIAN_VERSION}-on-${HOST_SYSTEM}"
       --build-arg RASPBIAN_VERSION="${RASPBIAN_VERSION}"
-      ./rpi-cross/Dockerfile
+      "./rpi-cross/${HOST_SYSTEM}.Dockerfile"
 
 .push-definition: &push-template
   image: docker:stable
   tags:
     - docker
   stage: push
+  only:
+    refs:
+      - master
   script:
     - export CONTAINER_IMAGE="${CI_REGISTRY}/${CI_PROJECT_PATH}/${CONTAINER_SOURCE_IMAGE_TAG}"
     - export HUB_IMAGE="${HUB_USER}/${HUB_DEST_IMAGE_TAG}"
@@ -28,33 +32,81 @@ stages:
     - docker logout
     - docker login -u "${HUB_USER}" -p "${HUB_ACCESS_TOKEN}"
     - docker tag "${CONTAINER_IMAGE}" "${HUB_IMAGE}"
-    - docker push "${HUB_IMAGE}"
+    - echo docker push "${HUB_IMAGE}"
     - docker logout
 
-build:stretch:
+build:stretch-on-debian:
   <<: *build-template
   variables:
     RASPBIAN_VERSION: stretch
+    HOST_SYSTEM: debian
 
-build:buster:
+build:buster-on-debian:
   <<: *build-template
   variables:
     RASPBIAN_VERSION: buster
+    HOST_SYSTEM: debian
 
-push:stretch:
+build:stretch-on-alpine:
+  <<: *build-template
+  variables:
+    RASPBIAN_VERSION: stretch
+    HOST_SYSTEM: alpine
+
+build:buster-on-alpine:
+  <<: *build-template
+  variables:
+    RASPBIAN_VERSION: buster
+    HOST_SYSTEM: alpine
+
+gate-release:
+  image: alpine
+  stage: release
+  script:
+    - echo "NOOP"
+  only:
+    refs:
+      - master
+  when: manual
+
+push:stretch-on-debian:
   <<: *push-template
   variables:
-    CONTAINER_SOURCE_IMAGE_TAG: rpi-cross-stretch:latest
-    HUB_DEST_IMAGE_TAG: rpi-cross:stretch
+    CONTAINER_SOURCE_IMAGE_TAG: rpi-cross-stretch-on-debian:latest
+    HUB_DEST_IMAGE_TAG: rpi-cross:stretch-on-debian
+
+push:buster-on-debian:
+  <<: *push-template
+  variables:
+    CONTAINER_SOURCE_IMAGE_TAG: rpi-cross-buster-on-debian:latest
+    HUB_DEST_IMAGE_TAG: rpi-cross:buster-on-debian
+
+push:stretch-on-alpine:
+  <<: *push-template
+  variables:
+    CONTAINER_SOURCE_IMAGE_TAG: rpi-cross-stretch-on-alpine:latest
+    HUB_DEST_IMAGE_TAG: rpi-cross:stretch-on-alpine
+
+push:buster-on-alpine:
+  <<: *push-template
+  variables:
+    CONTAINER_SOURCE_IMAGE_TAG: rpi-cross-buster-on-alpine:latest
+    HUB_DEST_IMAGE_TAG: rpi-cross:buster-on-alpine
 
 push:buster:
   <<: *push-template
   variables:
-    CONTAINER_SOURCE_IMAGE_TAG: rpi-cross-buster:latest
+    CONTAINER_SOURCE_IMAGE_TAG: rpi-cross-buster-on-alpine:latest
     HUB_DEST_IMAGE_TAG: rpi-cross:buster
+
+push:stretch:
+  <<: *push-template
+  variables:
+    CONTAINER_SOURCE_IMAGE_TAG: rpi-cross-stretch-on-alpine:latest
+    HUB_DEST_IMAGE_TAG: rpi-cross:stretch
 
 push:latest:
   <<: *push-template
   variables:
-    CONTAINER_SOURCE_IMAGE_TAG: rpi-cross-buster:latest
+    CONTAINER_SOURCE_IMAGE_TAG: rpi-cross-buster-on-alpine:latest
     HUB_DEST_IMAGE_TAG: rpi-cross:latest
