@@ -1,112 +1,187 @@
 stages:
-  - build
-  - release
-  - push
+  - sysroot
+  - bundle
+  - gate
+  - deploy
 
-.build-definition: &build-template
+.docker-ci-job-definition: &docker-ci-job-template
   image: docker:stable
   tags:
     - docker
-  stage: build
   before_script:
-   - apk add --no-cache --update bash
-  script:
-    - bash autobuild.sh
-      --image-tag "rpi-cross-${RASPBIAN_VERSION}-on-${HOST_SYSTEM}"
-      --build-arg RASPBIAN_VERSION="${RASPBIAN_VERSION}"
-      "./rpi-cross/${HOST_SYSTEM}.Dockerfile"
+    - docker login -u "${CI_REGISTRY_USER}" -p "${CI_REGISTRY_PASSWORD}" "${CI_REGISTRY}"
+  after_script:
+    - docker logout
 
-.push-definition: &push-template
-  image: docker:stable
-  tags:
-    - docker
-  stage: push
+.sysroot-definition: &sysroot-template
+  <<: *docker-ci-job-template
+  stage: sysroot
+  script:
+    - export IMAGE_PATH="${CI_REGISTRY}/${CI_PROJECT_PATH}/sysroot-${RASPBIAN_VERSION}"
+    - docker build
+      --image-tag  "${IMAGE_PATH}:${CI_COMMIT_SHA}"
+      --image-tag  "${IMAGE_PATH}:latest"
+      --cache-from "${IMAGE_PATH}:latest"
+      --build-arg RASPBIAN_VERSION="${RASPBIAN_VERSION}"
+      --file "./rpi-cross/sysroot.Dockerfile"
+      "./rpi-cross"
+    - docker push "${IMAGE_PATH}:${CI_COMMIT_SHA}"
+    - docker push "${IMAGE_PATH}:latest"
+
+.bundle-definition: &bundle-template
+  <<: *docker-ci-job-template
+  stage: bundle
+  script:
+    - export    IMAGE_PATH="${CI_REGISTRY}/${CI_PROJECT_PATH}/${RASPBIAN_VERSION}-on-${HOST_SYSTEM}"
+    - export SYSROOT_IMAGE="${CI_REGISTRY}/${CI_PROJECT_PATH}/sysroot-${RASPBIAN_VERSION}"
+    - docker build
+      --image-tag  "${IMAGE_PATH}:${CI_COMMIT_SHA}"
+      --image-tag  "${IMAGE_PATH}:latest"
+      --cache-from "${IMAGE_PATH}:latest"
+      --build-arg SYSROOT_IMAGE="${SYSROOT_IMAGE}:${CI_COMMIT_SHA}"
+      --file "./rpi-cross/${HOST_SYSTEM}.Dockerfile"
+      "./rpi-cross"
+    - docker push "${IMAGE_PATH}:${CI_COMMIT_SHA}"
+    - docker push "${IMAGE_PATH}:latest"
+
+.deploy-definition: &deploy-template
+  <<: *docker-ci-job-template
+  stage: deploy
   only:
     refs:
       - master
   script:
-    - export CONTAINER_IMAGE="${CI_REGISTRY}/${CI_PROJECT_PATH}/${CONTAINER_SOURCE_IMAGE_TAG}"
-    - export HUB_IMAGE="${HUB_USER}/${HUB_DEST_IMAGE_TAG}"
-    - docker login -u "${CI_REGISTRY_USER}" -p "${CI_REGISTRY_PASSWORD}" "${CI_REGISTRY}"
-    - docker pull "${CONTAINER_IMAGE}"
+    - export FROM_IMAGE="${CI_REGISTRY}/${CI_PROJECT_PATH}/${RASPBIAN_VERSION}-on-${HOST_SYSTEM}:${CI_COMMIT_SHA}"
+    - export   TO_IMAGE="${HUB_USER}/rpi-cross:${HUB_TAG}"
+    - docker pull "${FROM_IMAGE}"
     - docker logout
     - docker login -u "${HUB_USER}" -p "${HUB_ACCESS_TOKEN}"
-    - docker tag "${CONTAINER_IMAGE}" "${HUB_IMAGE}"
-    - echo docker push "${HUB_IMAGE}"
-    - docker logout
+    - docker tag "${FROM_IMAGE}" "${TO_IMAGE}"
+    - echo docker push "${TO_IMAGE}"
 
-build:stretch-on-debian:
-  <<: *build-template
+sysroot-stretch:
+  <<: *sysroot-template
   variables:
     RASPBIAN_VERSION: stretch
-    HOST_SYSTEM: debian
 
-build:buster-on-debian:
-  <<: *build-template
+sysroot-buster:
+  <<: *sysroot-template
   variables:
     RASPBIAN_VERSION: buster
-    HOST_SYSTEM: debian
 
-build:stretch-on-alpine:
-  <<: *build-template
+bundle-stretch-on-alpine:
+  <<: *bundle-template
+  needs:
+    - sysroot-stretch
   variables:
+    HOST_SYSTEM: alpine
     RASPBIAN_VERSION: stretch
-    HOST_SYSTEM: alpine
 
-build:buster-on-alpine:
-  <<: *build-template
+bundle-buster-on-alpine:
+  <<: *bundle-template
+  needs:
+    - sysroot-buster
   variables:
-    RASPBIAN_VERSION: buster
     HOST_SYSTEM: alpine
+    RASPBIAN_VERSION: buster
 
-gate-release:
+bundle-stretch-on-debian:
+  <<: *bundle-template
+  needs:
+    - sysroot-stretch
+  variables:
+    HOST_SYSTEM: debian
+    RASPBIAN_VERSION: stretch
+
+bundle-buster-on-debian:
+  <<: *bundle-template
+  needs:
+    - sysroot-buster
+  variables:
+    HOST_SYSTEM: debian
+    RASPBIAN_VERSION: buster
+
+gate-deploy:
   image: alpine
-  stage: release
+  stage: gate
   script:
-    - echo "NOOP"
+    - echo "This job will just trigger all the deploy."
   only:
     refs:
       - master
   when: manual
+  needs:
+    - bundle-stretch-on-alpine
+    - bundle-stretch-on-debian
+    - bundle-buster-on-alpine
+    - bundle-buster-on-debian
 
-push:stretch-on-debian:
-  <<: *push-template
+deploy-stretch-on-debian:
+  <<: *deploy-template
+  needs:
+    - bundle-stretch-on-debian
+    - gate-deploy
   variables:
-    CONTAINER_SOURCE_IMAGE_TAG: rpi-cross-stretch-on-debian:latest
-    HUB_DEST_IMAGE_TAG: rpi-cross:stretch-on-debian
+    RASPBIAN_VERSION: stretch
+    HOST_SYSTEM: debian
+    HUB_TAG: stretch-on-debian
 
-push:buster-on-debian:
-  <<: *push-template
+deploy-buster-on-debian:
+  <<: *deploy-template
+  needs:
+    - bundle-buster-on-debian
+    - gate-deploy
   variables:
-    CONTAINER_SOURCE_IMAGE_TAG: rpi-cross-buster-on-debian:latest
-    HUB_DEST_IMAGE_TAG: rpi-cross:buster-on-debian
+    RASPBIAN_VERSION: buster
+    HOST_SYSTEM: debian
+    HUB_TAG: buster-on-debian
 
-push:stretch-on-alpine:
-  <<: *push-template
+deploy-stretch-on-alpine:
+  <<: *deploy-template
+  needs:
+    - bundle-stretch-on-alpine
+    - gate-deploy
   variables:
-    CONTAINER_SOURCE_IMAGE_TAG: rpi-cross-stretch-on-alpine:latest
-    HUB_DEST_IMAGE_TAG: rpi-cross:stretch-on-alpine
+    RASPBIAN_VERSION: stretch
+    HOST_SYSTEM: alpine
+    HUB_TAG: stretch-on-alpine
 
-push:buster-on-alpine:
-  <<: *push-template
+deploy-buster-on-alpine:
+  <<: *deploy-template
+  needs:
+    - bundle-buster-on-alpine
+    - gate-deploy
   variables:
-    CONTAINER_SOURCE_IMAGE_TAG: rpi-cross-buster-on-alpine:latest
-    HUB_DEST_IMAGE_TAG: rpi-cross:buster-on-alpine
+    RASPBIAN_VERSION: buster
+    HOST_SYSTEM: alpine
+    HUB_TAG: buster-on-alpine
 
-push:buster:
-  <<: *push-template
+deploy-buster:
+  <<: *deploy-template
+  needs:
+    - bundle-buster-on-alpine
+    - gate-deploy
   variables:
-    CONTAINER_SOURCE_IMAGE_TAG: rpi-cross-buster-on-alpine:latest
-    HUB_DEST_IMAGE_TAG: rpi-cross:buster
+    RASPBIAN_VERSION: buster
+    HOST_SYSTEM: alpine
+    HUB_TAG: buster
 
-push:stretch:
-  <<: *push-template
+deploy-stretch:
+  <<: *deploy-template
+  needs:
+    - bundle-stretch-on-alpine
+    - gate-deploy
   variables:
-    CONTAINER_SOURCE_IMAGE_TAG: rpi-cross-stretch-on-alpine:latest
-    HUB_DEST_IMAGE_TAG: rpi-cross:stretch
+    RASPBIAN_VERSION: stretch
+    HOST_SYSTEM: alpine
+    HUB_TAG: stretch
 
-push:latest:
-  <<: *push-template
+deploy-latest:
+  <<: *deploy-template
+  needs:
+    - bundle-buster-on-alpine
+    - gate-deploy
   variables:
-    CONTAINER_SOURCE_IMAGE_TAG: rpi-cross-buster-on-alpine:latest
-    HUB_DEST_IMAGE_TAG: rpi-cross:latest
+    RASPBIAN_VERSION: buster
+    HOST_SYSTEM: alpine
+    HUB_TAG: latest

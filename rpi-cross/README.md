@@ -8,57 +8,42 @@ for the Raspberry Pi.
 Although this appears in Raspbian's package repositories as `armhf`, it actually differs from the `armhf`
 from Debian's package repositories.
 
-This image uses the default `clang` that comes with Debian (`buster-slim`, currently), and adds on top of it:
+`sysroot.Dockerfile`
+--------------------
+This is a Debian based image whose purpose is to pull down the minimal needed packages for compiling, directly from Raspbian's repo.
+After build, it contains a fully working (almost minimal) sysroot for Raspbian in `/usr/share/rpi-sysroot`, including CMake files for crosscompiling. **This is intended only as an intermediate to bundle data, not as the cross-compile image.**
 
- - A Raspberry Pi sysroot, which contains also `libc++`, at `/usr/share/rpi-sysroot`.  
-   This is generated with `./scripts/rpi-sysroot.sh` in the current repo.
- - A toolchain for CMake at `/usr/share/rpi-sysroot/RPi.cmake` for cross-compiling. See below.
- - Symlinks for `cpp-armv6-linux-gnueabihf` and `cc-armv6-linux-gnueabihf`, alternatives for `lld`, various build packages (`make`, `cmake`, `binutils`).
- - A couple of helper scripts, `arch-check` and `check-armv6` that help ensuring a binary is `armv6`. See below.
+Build arguments:
+ - `RASPBIAN_VERSION=buster`
+   Raspbian version to pull packages from.
 
-Build options:
- - `RASPBIAN_VERSION=buster`  
-   Version of Raspbian to use as a basis for creating the sysroot.
- - `HOST_IMAGE="debian:buster-slim"`  
-   Debian image to use as a base for the final image.  
- - `HOST_REPO_VERSION=buster`  
-   Version of the repository to use to pull down LLVM and Clang for cross-compiling (in the host).
-   This can be used for example to specify backports.
+The list of packages that constitute a working sysroot is in `_${RASPBIAN_VERSION}/packages.list`, and the extra include paths needed for compilation (which are Raspbian-specific) are in `_${RASPBIAN_VERSION}/RPiStdLib.cmake`.
 
-How to use
-----------
-When running inside the generated image, it suffices to import the CMake toolchain:
+`debian` and `alpine.Dockerfile`
+--------------------------------
+These are actual cross-compile images. They use the Clang version shipped with the given Debian or Alpine version as a cross-compiler, and they copy over from `sysroot.Dockerfile` the sysroot data. **These can be used directly for compiling.**
 
-```
-$ mkdir build_folder
-$ cd build_folder
-$ cmake -DCMAKE_TOOLCHAIN_FILE=/usr/share/rpi-sysroot/RPi.cmake path/to/my_project
-$ make
-```
-
-When compiling sources directly, the provided wrappers can be used
-
-```
-$ cpp-armv6-linux-gnueabihf my_source_file.cpp
-ld: warning: lld uses extended branch encoding, no object with architecture supporting feature detected.
-ld: warning: lld may use movt/movw, no object with architecture supporting feature detected.
-$ ./a.out   # Will fail because can only run on a Raspberry Pi
-/lib/ld-linux-armhf.so.3: No such file or directory  
-```
+Build arguments:
+ - `HOST_IMAGE=alpine:3.11.5` or `debian:buster-slim`
+   Version of Alpine or Debian to use as a basis.
+ - `HOST_REPO_VERSION=buster`
+   (Debian only) version of the repo to pull the compile packages from. This can be used e.g. for backports.
+ - `SYSROOT_IMAGE`
+   Tag of an image compiled from `sysroot.Dockerfile` to copy the sysroot from. Mandatory.
 
 
-Build helper scripts: (`./scripts`)
-===================================
+Helper scripts
+==============
 
-Sysroot builder (`rpi-sysroot.sh`)
-----------------------------------
+Sysroot builder (`scripts/rpi-sysroot.sh`)
+------------------------------------------
 
 Creates a Raspbian sysroot by downloading and unpacking the specified packages from the
-Raspbian repository.
+Raspbian repository. It can also remove files that are not source or libraries.
 
 Usage example:
 ```
-# ./rpi-sysroot.sh --sysroot /usr/share/rpi-sysroot --version buster --package-list package_lists/buster.list
+# ./rpi-sysroot.sh --sysroot /usr/share/rpi-sysroot --version buster --package-list _buster/packages.list
 >> The script will prepare a sysroot in /usr/share/rpi-sysroot with the following packages:
 >>   1. gcc-4.7-base
 [...]
@@ -100,8 +85,8 @@ dpkg-deb --extract /tmp/tmp.Jf3d7H4qhc/libc6_2.24-11+deb9u4_armhf.deb /usr/share
 >> Completed, removing package files.
 ```
 
-ELF architecture check (`arch-check.sh`)
-----------------------------------------
+ELF architecture check (`scripts/arch-check.sh`)
+------------------------------------------------
 Analyzes the architecture of the specified binaries, optionally ensures that all
 match a given architecture. This can be used to make sure that compiled binaries
 are correctly on `armv6`.
@@ -122,28 +107,27 @@ Usage example:
 All the 10 binaries analyzes match the architecture v6.
 ```
 
-Bundled scripts/toolchains
-==========================
-
-General purpose binaries (`./bin`)
-----------------------------------
+General purpose binaries (`bin/`)
+---------------------------------
 These are bundled into the final image and available in `/usr/bin`.
 
-  - `arch-check`: symlink to `./scripts/arch-check.sh`.  
-  - `cc-armv6-linux-gnueabihf`: just calls `cc` with the correct Raspberry Pi compile flags:  
+  - `arch-check`: symlink to `./scripts/arch-check.sh`.
+  - `cc-armv6-linux-gnueabihf`: just calls `cc` with the correct Raspberry Pi compile flags:
     `-march=armv6 -mfloat-abi=hard -mfpu=vfp`
   - `cpp-armv6-linux-gnueabihf`: as above, but calls `cpp`.
 
-CMake toolchain (`./sysroot/RPi.cmake`)
---------------------------------------
+CMake toolchain (`sysroot/RPi.cmake`)
+-------------------------------------
 Basic toolchain for cross-compiling. Assumes that a Raspberry Pi sysroot is present
 at `/usr/share/rpi-sysroot`, and sets the target triple to `arm-linux-gnueabihf`.
 This means that a valid C/C++ compiler for `arm-linux-gnueabihf` must be installed in
-the current system (e.g. `cc-` and `cpp-armv6-linux-gnueabihf` wrappers above).  
+the current system (e.g. `cc-` and `cpp-armv6-linux-gnueabihf` wrappers above).
+It will also load a list of Raspbian specific include directories (`RASPBIAN_STANDARD_INCLUDE_DIRECTORIES`)
+from `/usr/share/rpi-sysroot/RPiStdLib.cmake`.
 
-Sysroot compliance checker (`./sysroot/check-armv6`)
-----------------------------------------------------
-Wrapper for `./scripts/arch-check.sh` that analyzes a whole folder.
+Sysroot compliance checker (`sysroot/check-armv6`)
+--------------------------------------------------
+Wrapper for `scripts/arch-check.sh` that analyzes a whole folder.
 Called with no arguments will check that the wholesysroot is completely `armv6`-clean.
 
 Usage example:
