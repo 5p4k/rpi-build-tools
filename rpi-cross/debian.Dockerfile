@@ -2,6 +2,8 @@ ARG HOST_IMAGE=debian:buster-slim
 ARG HOST_REPO_VERSION=buster
 ARG SYSROOT_IMAGE
 
+FROM ${SYSROOT_IMAGE} as sysroot
+
 FROM $HOST_IMAGE
 ARG HOST_REPO_VERSION
 RUN apt-get -qq update \
@@ -12,7 +14,7 @@ RUN apt-get -qq update \
         make \
         llvm-7-dev \
         cmake
-COPY --from=$SYSROOT_IMAGE "/usr/share/rpi-sysroot" "/usr/share/rpi-sysroot"
+COPY --from=sysroot "/usr/share/rpi-sysroot" "/usr/share/rpi-sysroot"
 COPY "bin/*" "/usr/bin/"
 RUN    update-alternatives --install /usr/bin/clang clang /usr/bin/clang-7 100 \
     && update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-7 100 \
