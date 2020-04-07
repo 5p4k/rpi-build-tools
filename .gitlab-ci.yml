@@ -19,8 +19,8 @@ stages:
   script:
     - export IMAGE_PATH="${CI_REGISTRY}/${CI_PROJECT_PATH}/sysroot-${RASPBIAN_VERSION}"
     - docker build
-      --image-tag  "${IMAGE_PATH}:${CI_COMMIT_SHA}"
-      --image-tag  "${IMAGE_PATH}:latest"
+      --tag  "${IMAGE_PATH}:${CI_COMMIT_SHA}"
+      --tag  "${IMAGE_PATH}:latest"
       --cache-from "${IMAGE_PATH}:latest"
       --build-arg RASPBIAN_VERSION="${RASPBIAN_VERSION}"
       --file "./rpi-cross/sysroot.Dockerfile"
@@ -35,8 +35,8 @@ stages:
     - export    IMAGE_PATH="${CI_REGISTRY}/${CI_PROJECT_PATH}/${RASPBIAN_VERSION}-on-${HOST_SYSTEM}"
     - export SYSROOT_IMAGE="${CI_REGISTRY}/${CI_PROJECT_PATH}/sysroot-${RASPBIAN_VERSION}"
     - docker build
-      --image-tag  "${IMAGE_PATH}:${CI_COMMIT_SHA}"
-      --image-tag  "${IMAGE_PATH}:latest"
+      --tag  "${IMAGE_PATH}:${CI_COMMIT_SHA}"
+      --tag  "${IMAGE_PATH}:latest"
       --cache-from "${IMAGE_PATH}:latest"
       --build-arg SYSROOT_IMAGE="${SYSROOT_IMAGE}:${CI_COMMIT_SHA}"
       --file "./rpi-cross/${HOST_SYSTEM}.Dockerfile"
