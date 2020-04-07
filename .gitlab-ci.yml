@@ -1,13 +1,7 @@
 stages:
   - sysroot
   - bundle
-  - gate
   - deploy
-
-.docker-hub-environment-definition: &docker-hub-environment-template
-  environment:
-    name: Docker Hub
-    url: https://hub.docker.com/r/5p4k/rpi-cross
 
 .docker-ci-job-definition: &docker-ci-job-template
   image: docker:stable
@@ -51,7 +45,9 @@ stages:
 
 .deploy-definition: &deploy-template
   <<: *docker-ci-job-template
-  <<: *docker-hub-environment-template
+  environment:
+    name: Docker Hub
+    url: https://hub.docker.com/r/5p4k/rpi-cross
   stage: deploy
   only:
     - master
@@ -106,26 +102,10 @@ bundle-buster-on-debian:
     HOST_SYSTEM: debian
     RASPBIAN_VERSION: buster
 
-gate-deploy:
-  <<: *docker-hub-environment-template
-  image: alpine
-  stage: gate
-  script:
-    - echo "This job will just trigger all the deploy."
-  only:
-    - master
-  when: manual
-  needs:
-    - bundle-stretch-on-alpine
-    - bundle-stretch-on-debian
-    - bundle-buster-on-alpine
-    - bundle-buster-on-debian
-
 deploy-stretch-on-debian:
   <<: *deploy-template
   needs:
     - bundle-stretch-on-debian
-    - gate-deploy
   variables:
     RASPBIAN_VERSION: stretch
     HOST_SYSTEM: debian
@@ -135,7 +115,6 @@ deploy-buster-on-debian:
   <<: *deploy-template
   needs:
     - bundle-buster-on-debian
-    - gate-deploy
   variables:
     RASPBIAN_VERSION: buster
     HOST_SYSTEM: debian
@@ -145,7 +124,6 @@ deploy-stretch-on-alpine:
   <<: *deploy-template
   needs:
     - bundle-stretch-on-alpine
-    - gate-deploy
   variables:
     RASPBIAN_VERSION: stretch
     HOST_SYSTEM: alpine
@@ -155,7 +133,6 @@ deploy-buster-on-alpine:
   <<: *deploy-template
   needs:
     - bundle-buster-on-alpine
-    - gate-deploy
   variables:
     RASPBIAN_VERSION: buster
     HOST_SYSTEM: alpine
@@ -165,7 +142,6 @@ deploy-buster:
   <<: *deploy-template
   needs:
     - bundle-buster-on-alpine
-    - gate-deploy
   variables:
     RASPBIAN_VERSION: buster
     HOST_SYSTEM: alpine
@@ -175,7 +151,6 @@ deploy-stretch:
   <<: *deploy-template
   needs:
     - bundle-stretch-on-alpine
-    - gate-deploy
   variables:
     RASPBIAN_VERSION: stretch
     HOST_SYSTEM: alpine
@@ -185,7 +160,6 @@ deploy-latest:
   <<: *deploy-template
   needs:
     - bundle-buster-on-alpine
-    - gate-deploy
   variables:
     RASPBIAN_VERSION: buster
     HOST_SYSTEM: alpine
