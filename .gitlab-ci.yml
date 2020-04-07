@@ -59,7 +59,7 @@ stages:
     - docker logout
     - docker login -u "${HUB_USER}" -p "${HUB_ACCESS_TOKEN}"
     - docker tag "${FROM_IMAGE}" "${TO_IMAGE}"
-    - echo docker push "${TO_IMAGE}"
+    - docker push "${TO_IMAGE}"
 
 sysroot-stretch:
   <<: *sysroot-template
