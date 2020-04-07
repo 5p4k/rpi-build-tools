@@ -51,6 +51,7 @@ stages:
   stage: deploy
   only:
     - master
+  when: manual
   script:
     - export FROM_IMAGE="${CI_REGISTRY}/${CI_PROJECT_PATH}/${RASPBIAN_VERSION}-on-${HOST_SYSTEM}:${CI_COMMIT_SHA}"
     - export   TO_IMAGE="${HUB_USER}/rpi-cross:${HUB_TAG}"
