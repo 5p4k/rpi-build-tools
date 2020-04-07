@@ -4,6 +4,11 @@ stages:
   - gate
   - deploy
 
+.docker-hub-environment-definition: &docker-hub-environment-template
+  environment:
+    name: Docker Hub
+    url: https://hub.docker.com/r/5p4k/rpi-cross
+
 .docker-ci-job-definition: &docker-ci-job-template
   image: docker:stable
   tags:
@@ -46,10 +51,10 @@ stages:
 
 .deploy-definition: &deploy-template
   <<: *docker-ci-job-template
+  <<: *docker-hub-environment-template
   stage: deploy
   only:
-    refs:
-      - master
+    - master
   script:
     - export FROM_IMAGE="${CI_REGISTRY}/${CI_PROJECT_PATH}/${RASPBIAN_VERSION}-on-${HOST_SYSTEM}:${CI_COMMIT_SHA}"
     - export   TO_IMAGE="${HUB_USER}/rpi-cross:${HUB_TAG}"
@@ -102,13 +107,13 @@ bundle-buster-on-debian:
     RASPBIAN_VERSION: buster
 
 gate-deploy:
+  <<: *docker-hub-environment-template
   image: alpine
   stage: gate
   script:
     - echo "This job will just trigger all the deploy."
   only:
-    refs:
-      - master
+    - master
   when: manual
   needs:
     - bundle-stretch-on-alpine
